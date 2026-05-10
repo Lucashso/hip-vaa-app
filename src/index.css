@@ -1,0 +1,137 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* HIP VA'A APP — Design System (do design v2). Paleta oceânica light-first. */
+
+@layer base {
+  :root {
+    --hv-ink: 200 75% 8%;
+    --hv-ink-2: 210 65% 15%;
+    --hv-navy: 209 75% 21%;
+    --hv-blue: 207 73% 40%;
+    --hv-cyan: 189 78% 53%;
+    --hv-foam: 197 51% 94%;
+    --hv-sand: 36 41% 93%;
+    --hv-coral: 12 100% 64%;
+    --hv-leaf: 156 58% 44%;
+    --hv-amber: 41 87% 61%;
+
+    --hv-bg: 210 20% 97%;
+    --hv-surface: 0 0% 100%;
+    --hv-line: 210 16% 91%;
+    --hv-text: 210 53% 9%;
+    --hv-text-2: 210 18% 35%;
+    --hv-text-3: 210 13% 58%;
+
+    --background: var(--hv-bg);
+    --foreground: var(--hv-text);
+    --primary: var(--hv-navy);
+    --primary-foreground: 0 0% 100%;
+    --destructive: var(--hv-coral);
+    --destructive-foreground: 0 0% 100%;
+    --muted: var(--hv-bg);
+    --muted-foreground: var(--hv-text-2);
+    --border: var(--hv-line);
+    --input: var(--hv-line);
+    --ring: var(--hv-navy);
+  }
+
+  .dark {
+    --hv-bg: 210 73% 6%;
+    --hv-surface: 209 60% 12%;
+    --hv-line: 209 50% 21%;
+    --hv-text: 207 56% 94%;
+    --hv-text-2: 207 25% 69%;
+    --hv-text-3: 207 20% 45%;
+    --hv-foam: 209 64% 16%;
+    --primary: var(--hv-cyan);
+    --primary-foreground: var(--hv-ink);
+  }
+
+  [data-palette="sunrise"] {
+    --hv-cyan: 21 100% 65%;
+    --hv-coral: 11 80% 54%;
+  }
+  [data-palette="reef"] {
+    --hv-navy: 174 70% 10%;
+    --hv-blue: 174 75% 23%;
+    --hv-cyan: 165 76% 53%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "Inter", "Helvetica Neue", system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  h1, h2, h3, h4 {
+    font-family: "Bricolage Grotesque", "Inter", sans-serif;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+    margin: 0;
+  }
+  ::selection {
+    background: hsl(var(--hv-cyan) / 0.4);
+    color: hsl(var(--hv-ink));
+  }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: hsl(var(--hv-bg)); }
+  ::-webkit-scrollbar-thumb { background: hsl(var(--hv-line)); border-radius: 999px; }
+}
+
+@layer components {
+  .hv-chip {
+    @apply inline-flex items-center gap-1.5 rounded-full;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: hsl(var(--hv-foam));
+    color: hsl(var(--hv-navy));
+  }
+  .dark .hv-chip {
+    background: hsl(var(--hv-cyan) / 0.12);
+    color: hsl(var(--hv-cyan));
+  }
+  .hv-card {
+    background: hsl(var(--hv-surface));
+    border-radius: 14px;
+    border: 1px solid hsl(var(--hv-line));
+  }
+  .hv-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+  }
+  .hv-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: hsl(var(--hv-text-3));
+    font-weight: 600;
+  }
+  .hv-btn {
+    @apply inline-flex items-center justify-center gap-2;
+    padding: 12px 18px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    border: none;
+    cursor: pointer;
+    transition: transform .15s, background .2s;
+  }
+  .hv-btn-primary { background: hsl(var(--hv-navy)); color: white; }
+  .hv-btn-primary:hover { background: hsl(var(--hv-blue)); }
+  .hv-btn-accent { background: hsl(var(--hv-cyan)); color: hsl(var(--hv-ink)); }
+  .hv-btn-ghost {
+    background: transparent;
+    color: hsl(var(--hv-text));
+    border: 1px solid hsl(var(--hv-line));
+  }
+}
