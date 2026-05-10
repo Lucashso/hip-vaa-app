@@ -1,44 +1,137 @@
-// InstrutorEvolucao — placeholder.
+// InstrutorEvolucao — evolução do aluno (mobile).
+// Adaptado do HVInstrutorEvolucao (instrutor.jsx) — stats + chart SVG + anotações.
 
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { PageScaffold } from "@/components/PageScaffold";
 import { HVIcon } from "@/lib/HVIcon";
+import { cn } from "@/lib/utils";
+
+const STATS = [
+  { value: "92%", label: "Frequência" },
+  { value: "13", label: "Streak" },
+  { value: "Av+", label: "Nível" },
+];
+
+const NOTES = [
+  { date: "07 MAI", text: "Entrada da pá com bom ângulo. Ajustar timing no #2." },
+  { date: "30 ABR", text: "Resistência muito boa em alta cadência (24+ spm)." },
+  { date: "23 ABR", text: "Pediu indicação de remo carbono — sugeri Vaa Pro." },
+];
 
 export default function InstrutorEvolucao() {
-  const { studentId } = useParams<{ studentId: string }>();
+  useParams<{ studentId: string }>();
+
   return (
     <PageScaffold
-      eyebrow="EM CONSTRUÇÃO"
-      title="Evolução do aluno"
+      eyebrow="EVOLUÇÃO · OC6 AVANÇADO"
+      title="Kai Nakoa"
       back
       showTabBar={false}
     >
-      <div className="hv-card p-6 text-center">
-        <div className="w-14 h-14 mx-auto rounded-[16px] bg-hv-foam grid place-items-center mb-3">
-          <HVIcon name="trend" size={26} color="hsl(var(--hv-navy))" />
-        </div>
-        <div className="font-display text-[18px] text-hv-navy">
-          Em construção · próxima iteração
-        </div>
-        <p className="text-sm text-hv-text-2 mt-2 max-w-[280px] mx-auto">
-          Vai mostrar gráficos de presença, técnica e medições do aluno{" "}
-          <span className="font-mono">{studentId?.slice(0, 8) || "—"}</span>.
-        </p>
+      {/* Stats 3 colunas */}
+      <div className="hv-card p-3.5 flex gap-2.5">
+        {STATS.map((s, i) => (
+          <div
+            key={s.label}
+            className={cn(
+              "flex-1 text-center",
+              i < STATS.length - 1 && "border-r border-hv-line",
+            )}
+          >
+            <div className="font-display font-extrabold text-[22px] leading-none text-hv-navy">
+              {s.value}
+            </div>
+            <div className="text-[10px] text-hv-text-3 uppercase tracking-wider font-semibold mt-1">
+              {s.label}
+            </div>
+          </div>
+        ))}
       </div>
 
-      <Link
-        to="/equipe"
-        className="hv-card w-full p-4 flex items-center gap-3 hover:bg-hv-foam/40"
+      {/* Chart */}
+      <h3 className="hv-eyebrow !text-hv-text-2 !text-[12px] !tracking-[0.14em] mt-4 mb-1">
+        Frequência últimos 90 dias
+      </h3>
+      <div className="hv-card p-4">
+        <svg viewBox="0 0 320 120" className="w-full h-[120px] block" preserveAspectRatio="none">
+          <defs>
+            <linearGradient id="freqArea" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--hv-cyan))" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="hsl(var(--hv-cyan))" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {[20, 40, 60, 80, 100].map((y) => (
+            <line
+              key={y}
+              x1="0"
+              y1={y}
+              x2="320"
+              y2={y}
+              stroke="hsl(var(--hv-line))"
+              strokeDasharray="2,3"
+            />
+          ))}
+          <path
+            d="M0 60 L 30 50 L 60 70 L 90 40 L 120 30 L 150 45 L 180 25 L 210 35 L 240 20 L 270 28 L 300 18 L 320 22 L 320 120 L 0 120Z"
+            fill="url(#freqArea)"
+          />
+          <path
+            d="M0 60 L 30 50 L 60 70 L 90 40 L 120 30 L 150 45 L 180 25 L 210 35 L 240 20 L 270 28 L 300 18 L 320 22"
+            fill="none"
+            stroke="hsl(var(--hv-blue))"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+          />
+          {[
+            [0, 60],
+            [60, 70],
+            [120, 30],
+            [180, 25],
+            [240, 20],
+            [300, 18],
+          ].map(([x, y], i) => (
+            <circle
+              key={i}
+              cx={x}
+              cy={y}
+              r="3"
+              fill="white"
+              stroke="hsl(var(--hv-blue))"
+              strokeWidth="2"
+            />
+          ))}
+        </svg>
+      </div>
+
+      {/* Notes */}
+      <h3 className="hv-eyebrow !text-hv-text-2 !text-[12px] !tracking-[0.14em] mt-4 mb-1">
+        Anotações da técnica
+      </h3>
+      <div className="hv-card overflow-hidden">
+        {NOTES.map((n, i) => (
+          <div
+            key={i}
+            className={cn(
+              "px-3.5 py-3.5",
+              i < NOTES.length - 1 && "border-b border-hv-line",
+            )}
+          >
+            <div className="font-mono text-[10px] text-hv-text-3 tracking-wider font-semibold">
+              {n.date}
+            </div>
+            <div className="text-[13px] mt-1 leading-relaxed text-hv-text">{n.text}</div>
+          </div>
+        ))}
+      </div>
+
+      <button
+        type="button"
+        className="w-full py-3.5 rounded-[14px] bg-hv-foam text-hv-navy font-semibold text-[13px] inline-flex items-center justify-center gap-2"
+        style={{ border: "1px dashed hsl(var(--hv-blue))" }}
       >
-        <div className="w-10 h-10 rounded-[12px] bg-hv-foam grid place-items-center text-hv-navy">
-          <HVIcon name="home" size={18} />
-        </div>
-        <div className="flex-1">
-          <div className="font-display text-[14px]">Voltar pra Filial</div>
-          <div className="text-[11px] text-hv-text-3 mt-0.5">Home da equipe</div>
-        </div>
-        <HVIcon name="chevron-right" size={18} color="hsl(var(--hv-text-3))" />
-      </Link>
+        <HVIcon name="plus" size={16} stroke={2.4} />
+        Nova anotação
+      </button>
     </PageScaffold>
   );
 }
