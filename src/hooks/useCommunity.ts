@@ -46,20 +46,29 @@ interface RawPost {
   created_at: string;
 }
 
-/** Lista posts aprovados de um tenant + nome do autor. */
-export function useCommunityPosts(tenantId?: string) {
+/** Lista posts aprovados de um tenant + nome do autor.
+ *  Se expiryDays > 0, filtra apenas posts mais novos que X dias. */
+export function useCommunityPosts(tenantId?: string, expiryDays?: number) {
   return useQuery({
-    queryKey: ["community-posts", tenantId],
+    queryKey: ["community-posts", tenantId, expiryDays],
     queryFn: async (): Promise<CommunityPost[]> => {
       if (!tenantId) return [];
 
-      const { data: posts, error } = await supabase
+      let query = supabase
         .from("community_posts")
         .select("*")
         .eq("tenant_id", tenantId)
         .eq("is_approved", true)
         .order("created_at", { ascending: false })
         .limit(50);
+
+      // Filtro de expiração
+      if (expiryDays && expiryDays > 0) {
+        const cutoff = new Date(Date.now() - expiryDays * 24 * 60 * 60 * 1000).toISOString();
+        query = query.gte("created_at", cutoff);
+      }
+
+      const { data: posts, error } = await query;
       if (error) throw error;
 
       const rawPosts = (posts as RawPost[]) ?? [];
@@ -229,4 +238,39 @@ export function useRejectPost() {
     },
     onError: (err: Error) => toast.error("Erro ao remover: " + err.message),
   });
+}
+
+const LAST_VISIT_KEY = "last_community_visit";
+
+/**
+ * Conta posts criados desde o último acesso à comunidade.
+ * Persiste timestamp em localStorage por tenant.
+ */
+export function useNewCommunityPosts(tenantId?: string) {
+  const { data: posts = [] } = useCommunityPosts(tenantId);
+
+  const storageKey = tenantId ? `${LAST_VISIT_KEY}_${tenantId}` : LAST_VISIT_KEY;
+
+  const lastVisit = (() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      return raw ? new Date(raw) : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const count = lastVisit
+    ? posts.filter((p) => new Date(p.created_at) > lastVisit).length
+    : 0;
+
+  const markAsVisited = () => {
+    try {
+      localStorage.setItem(storageKey, new Date().toISOString());
+    } catch {
+      // Ignora erro de storage
+    }
+  };
+
+  return { count, markAsVisited };
 }

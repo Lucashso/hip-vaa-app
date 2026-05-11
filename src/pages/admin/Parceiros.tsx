@@ -1,11 +1,13 @@
-// Admin · Parceiros — CRUD parceiros + ações (whatsapp/link/coupon).
+// Admin · Parceiros — CRUD parceiros + ações (whatsapp/link/coupon) + upload logo.
 
 import { useEffect, useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { Loader } from "@/components/Loader";
 import { Modal, ConfirmDialog } from "@/components/Modal";
 import { FieldText, FieldNumber, FieldTextArea, FieldSelect, FieldToggle } from "@/components/Field";
+import { ImageCropper } from "@/components/ImageCropper";
 import { HVIcon } from "@/lib/HVIcon";
+import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/hooks/useAuth";
 import {
   usePartnersAdmin,
@@ -21,6 +23,7 @@ import {
   type PartnerActionInput,
   type PartnerActionType,
 } from "@/hooks/usePartnersAdmin";
+import { toast } from "sonner";
 
 const COLORS = ["#7B2D9F", "#1B6FB0", "#7A4A1F", "#2FB37A", "#FF6B4A", "#F2B544"];
 
@@ -49,6 +52,16 @@ function toInput(p: PartnerAdmin): PartnerInput {
   };
 }
 
+async function uploadPartnerLogo(tenantId: string, file: File): Promise<string> {
+  const path = `${tenantId}/${Date.now()}.jpg`;
+  const { error } = await supabase.storage
+    .from("partners")
+    .upload(path, file, { upsert: true, contentType: "image/jpeg" });
+  if (error) throw error;
+  const { data } = supabase.storage.from("partners").getPublicUrl(path);
+  return data.publicUrl;
+}
+
 export default function AdminParceiros() {
   const { profile } = useAuth();
   const tenantId = profile?.tenant_id ?? null;
@@ -62,12 +75,13 @@ export default function AdminParceiros() {
   const [editing, setEditing] = useState<PartnerAdmin | null>(null);
   const [form, setForm] = useState<PartnerInput>(EMPTY_PARTNER);
   const [actions, setActions] = useState<PartnerActionInput[]>([]);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [confirmDel, setConfirmDel] = useState<PartnerAdmin | null>(null);
 
   const { data: existingActions = [] } = usePartnerActionsAdmin(editing?.id ?? null);
   const saveActionsMut = useSavePartnerActions();
 
-  // Quando carrega actions do partner em edição, popular state
   useEffect(() => {
     if (editing && existingActions.length > 0) {
       setActions(
@@ -92,45 +106,63 @@ export default function AdminParceiros() {
     setEditing(null);
     setForm({ ...EMPTY_PARTNER, display_order: partners.length });
     setActions([]);
+    setLogoFile(null);
     setDialogOpen(true);
   };
+
   const onEdit = (p: PartnerAdmin) => {
     setEditing(p);
     setForm(toInput(p));
     setActions([]);
+    setLogoFile(null);
     setDialogOpen(true);
   };
 
   const onSubmit = async () => {
     if (!form.name.trim()) return;
-    if (editing) {
-      await new Promise<void>((resolve, reject) => {
-        updateMut.mutate(
-          { id: editing.id, input: form },
-          { onSuccess: () => resolve(), onError: (e) => reject(e) },
-        );
-      });
-      await new Promise<void>((resolve, reject) => {
-        saveActionsMut.mutate(
-          { partnerId: editing.id, actions },
-          { onSuccess: () => resolve(), onError: (e) => reject(e) },
-        );
-      });
-      setDialogOpen(false);
-    } else {
-      createMut.mutate(form, {
-        onSuccess: (created) => {
-          const newId = (created as { id: string } | undefined)?.id;
-          if (newId && actions.length > 0) {
-            saveActionsMut.mutate(
-              { partnerId: newId, actions },
-              { onSuccess: () => setDialogOpen(false) },
-            );
-          } else {
-            setDialogOpen(false);
-          }
-        },
-      });
+    setUploading(true);
+    try {
+      let finalForm = { ...form };
+
+      // Upload logo se selecionou arquivo
+      if (logoFile && tenantId) {
+        const url = await uploadPartnerLogo(tenantId, logoFile);
+        finalForm = { ...finalForm, logo_url: url };
+      }
+
+      if (editing) {
+        await new Promise<void>((resolve, reject) => {
+          updateMut.mutate(
+            { id: editing.id, input: finalForm },
+            { onSuccess: () => resolve(), onError: (e) => reject(e) },
+          );
+        });
+        await new Promise<void>((resolve, reject) => {
+          saveActionsMut.mutate(
+            { partnerId: editing.id, actions },
+            { onSuccess: () => resolve(), onError: (e) => reject(e) },
+          );
+        });
+        setDialogOpen(false);
+      } else {
+        createMut.mutate(finalForm, {
+          onSuccess: (created) => {
+            const newId = (created as { id: string } | undefined)?.id;
+            if (newId && actions.length > 0) {
+              saveActionsMut.mutate(
+                { partnerId: newId, actions },
+                { onSuccess: () => setDialogOpen(false) },
+              );
+            } else {
+              setDialogOpen(false);
+            }
+          },
+        });
+      }
+    } catch (err) {
+      toast.error("Erro ao salvar: " + (err as Error).message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -143,6 +175,9 @@ export default function AdminParceiros() {
   const delAction = (i: number) => {
     setActions(actions.filter((_, j) => i !== j));
   };
+
+  const isSaving =
+    uploading || createMut.isPending || updateMut.isPending || saveActionsMut.isPending;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -257,6 +292,7 @@ export default function AdminParceiros() {
             <button
               type="button"
               onClick={() => setDialogOpen(false)}
+              disabled={isSaving}
               className="px-3.5 py-2 rounded-[10px] text-[12px] font-semibold text-hv-text"
               style={{
                 background: "hsl(var(--hv-bg))",
@@ -268,23 +304,25 @@ export default function AdminParceiros() {
             <button
               type="button"
               onClick={onSubmit}
-              disabled={
-                createMut.isPending ||
-                updateMut.isPending ||
-                saveActionsMut.isPending ||
-                !form.name.trim()
-              }
+              disabled={isSaving || !form.name.trim()}
               className="px-3.5 py-2 rounded-[10px] text-[12px] font-bold text-white border-0"
               style={{
                 background: "hsl(var(--hv-navy))",
                 opacity: !form.name.trim() ? 0.5 : 1,
               }}
             >
-              {editing ? "Salvar" : "Criar"}
+              {isSaving ? "Salvando..." : editing ? "Salvar" : "Criar"}
             </button>
           </>
         }
       >
+        <ImageCropper
+          aspectRatio={1}
+          maxWidth={400}
+          onCropped={setLogoFile}
+          label="Logo (1:1)"
+          previewUrl={editing?.logo_url ?? null}
+        />
         <FieldText
           label="Nome"
           value={form.name}
@@ -295,12 +333,6 @@ export default function AdminParceiros() {
           label="Descrição"
           value={form.description ?? ""}
           onChange={(v) => setForm({ ...form, description: v })}
-        />
-        <FieldText
-          label="URL do logo"
-          value={form.logo_url ?? ""}
-          onChange={(v) => setForm({ ...form, logo_url: v })}
-          placeholder="https://..."
         />
         <FieldNumber
           label="Ordem"

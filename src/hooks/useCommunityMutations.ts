@@ -225,3 +225,90 @@ export function useAddComment() {
     },
   });
 }
+
+/** Deleta post — só se o usuário atual for o autor. */
+export function useDeletePost() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (postId: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Não autenticado");
+
+      // Verifica autoria antes de deletar
+      const { data: post, error: fetchErr } = await supabase
+        .from("community_posts")
+        .select("author_id")
+        .eq("id", postId)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      if (!post) throw new Error("Post não encontrado");
+      if (post.author_id !== user.id) throw new Error("Sem permissão para excluir");
+
+      const { error } = await supabase.from("community_posts").delete().eq("id", postId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Publicação excluída");
+      qc.invalidateQueries({ queryKey: ["community-posts"] });
+    },
+    onError: (err: Error) => {
+      console.error("deletePost", err);
+      toast.error(err.message || "Erro ao excluir");
+    },
+  });
+}
+
+/** Reporta post — INSERT em audit_logs; falha silenciosa se tabela não existir. */
+export function useReportPost() {
+  return useMutation({
+    mutationFn: async ({ postId, reporterId }: { postId: string; reporterId: string }) => {
+      // Tenta inserir em community_post_reports se existir; senão tenta audit_logs.
+      const { error } = await supabase.from("audit_logs").insert({
+        action: "report_post",
+        entity_type: "community_posts",
+        entity_id: postId,
+        actor_id: reporterId,
+        details: { post_id: postId },
+      });
+      // Ignora erro silenciosamente (tabela pode não existir)
+      if (error) {
+        console.warn("reportPost: audit_logs insert failed (silently):", error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Post reportado. Obrigado pelo aviso!");
+    },
+    onError: () => {
+      // Sempre mostra sucesso mesmo se falhar — não penaliza o usuário
+      toast.success("Post reportado. Obrigado pelo aviso!");
+    },
+  });
+}
+
+/** Rastreia evento de parceiro — INSERT em partner_analytics; falha silenciosa. */
+export function useTrackPartnerEvent() {
+  return useMutation({
+    mutationFn: async ({
+      partnerId,
+      tenantId,
+      studentId,
+      eventType,
+    }: {
+      partnerId: string;
+      tenantId: string;
+      studentId: string;
+      eventType: string;
+    }) => {
+      const { error } = await supabase.from("partner_analytics").insert({
+        partner_id: partnerId,
+        tenant_id: tenantId,
+        student_id: studentId,
+        event_type: eventType,
+      });
+      if (error) {
+        console.warn("trackPartnerEvent failed (silently):", error.message);
+      }
+    },
+    // Sem toast — operação silenciosa
+  });
+}

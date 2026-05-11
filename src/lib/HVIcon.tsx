@@ -11,7 +11,7 @@ export type HVIconName =
   | "trend" | "zap" | "wave" | "paddle" | "boat" | "dumbbell"
   | "sun" | "moon" | "filter" | "settings" | "trophy" | "gift"
   | "credit" | "pin" | "menu" | "logout" | "fire" | "share"
-  | "copy" | "star" | "play";
+  | "copy" | "star" | "play" | "image" | "edit";
 
 interface HVIconProps {
   name: HVIconName;
@@ -314,6 +314,21 @@ export function HVIcon({
       return (
         <svg {...common}>
           <path d="M6 4 20 12 6 20Z" />
+        </svg>
+      );
+    case "image":
+      return (
+        <svg {...common}>
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <circle cx="8.5" cy="8.5" r="1.5" />
+          <path d="m21 15-5-5L5 21" />
+        </svg>
+      );
+    case "edit":
+      return (
+        <svg {...common}>
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
         </svg>
       );
     default:

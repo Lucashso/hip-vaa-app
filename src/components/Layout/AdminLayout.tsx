@@ -6,16 +6,20 @@ import { Suspense } from "react";
 import { Outlet } from "react-router-dom";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminBottomNav } from "./AdminBottomNav";
+import { AppHeader } from "./AppHeader";
 import { PageLoader } from "@/components/PageLoader";
 
 export function AdminLayout() {
   return (
     <div className="min-h-screen bg-background flex w-full">
       <AdminSidebar />
-      <main className="flex-1 min-h-screen min-w-0 overflow-x-hidden pb-20 md:pb-0">
-        <Suspense fallback={<PageLoader />}>
-          <Outlet />
-        </Suspense>
+      <main className="flex-1 min-h-screen min-w-0 overflow-x-hidden pb-20 md:pb-0 flex flex-col">
+        <AppHeader />
+        <div className="flex-1">
+          <Suspense fallback={<PageLoader />}>
+            <Outlet />
+          </Suspense>
+        </div>
       </main>
       <AdminBottomNav />
     </div>
