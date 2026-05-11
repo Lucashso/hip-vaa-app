@@ -64,8 +64,40 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webp,woff2}"],
+        // Precache só shell mínimo. Resto vai runtime cache (network-first
+        // pra HTML, stale-while-revalidate pros assets) — evita travar o
+        // browser pré-cacheando 1.6MB no primeiro load.
+        globPatterns: ["index.html", "manifest.webmanifest", "favicon*.png"],
         navigateFallback: "/index.html",
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
+        runtimeCaching: [
+          {
+            urlPattern: ({ request }) => request.destination === "document",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-cache",
+              expiration: { maxEntries: 10, maxAgeSeconds: 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: ({ request }) =>
+              ["script", "style", "worker"].includes(request.destination),
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "asset-cache",
+              expiration: { maxEntries: 100, maxAgeSeconds: 7 * 24 * 60 * 60 },
+            },
+          },
+          {
+            urlPattern: ({ request }) =>
+              ["image", "font"].includes(request.destination),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "media-cache",
+              expiration: { maxEntries: 60, maxAgeSeconds: 30 * 24 * 60 * 60 },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: false,
