@@ -1,21 +1,19 @@
-// CoachCrew — tripulação OC6 (organização de assentos).
-// Adaptado do HVCoachCrew (equipe-extras.jsx).
+// CoachCrew — visualização real da tripulação OC6 por data (read-only).
+// - Seletor de data (default hoje se hora<8 senão amanhã)
+// - Lista classes ativas do tenant cuja weekday bate
+// - Para cada turma, agrupa crew_assignments por boat e mostra 6 assentos
 
 import { useMemo, useState } from "react";
 import { PageScaffold } from "@/components/PageScaffold";
 import { HVIcon } from "@/lib/HVIcon";
+import { Loader } from "@/components/Loader";
 import { useAuth } from "@/hooks/useAuth";
-import { useCrewTemplates } from "@/hooks/useAlunos";
-import { cn, getInitial } from "@/lib/utils";
-
-const FALLBACK_SEATS = [
-  { p: 1, nome: "Aroha Silva", role: "Steerer · marcação", c: "#FF6B4A", peso: "68kg" },
-  { p: 2, nome: "Kai Nakoa", role: "Stroker · ritmo", c: "#1B6FB0", peso: "78kg" },
-  { p: 3, nome: "Lani Souza", role: "Engine", c: "#2FB37A", peso: "82kg" },
-  { p: 4, nome: "Tane Kalani", role: "Engine", c: "#F2B544", peso: "85kg" },
-  { p: 5, nome: "Noa Hara", role: "Caller · troca", c: "#25C7E5", peso: "74kg" },
-  { p: 6, nome: "Manu Akana", role: "Steerer · timão", c: "#7B2D9F", peso: "72kg" },
-];
+import {
+  useClassesByDate,
+  useCrewAssignmentsForClass,
+  type CrewAssignmentForCoach,
+} from "@/hooks/useCrew";
+import { getInitial } from "@/lib/utils";
 
 const SEAT_COLORS = ["#FF6B4A", "#1B6FB0", "#2FB37A", "#F2B544", "#25C7E5", "#7B2D9F"];
 const SEAT_ROLES = [
@@ -27,191 +25,219 @@ const SEAT_ROLES = [
   "Steerer · timão",
 ];
 
+function defaultDate(): Date {
+  const now = new Date();
+  if (now.getHours() < 8) return now;
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  return tomorrow;
+}
+
+function fmtDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function fmtDateBR(d: Date): string {
+  return d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "short" }).toUpperCase();
+}
+
 export default function CoachCrew() {
   const { profile } = useAuth();
-  const { data: templates, isLoading } = useCrewTemplates(profile?.tenant_id);
-  const [activeTemplateIdx, setActiveTemplateIdx] = useState(0);
+  const [date, setDate] = useState<Date>(defaultDate);
 
-  const activeTemplate = templates?.[activeTemplateIdx];
-
-  const seats = useMemo(() => {
-    if (!activeTemplate) return FALLBACK_SEATS;
-    const positions = [1, 2, 3, 4, 5, 6];
-    return positions.map((p) => {
-      const seat = activeTemplate.seats.find((s) => s.seat_position === p);
-      const name = seat?.student?.full_name || seat?.staff?.full_name || `Assento ${p}`;
-      return {
-        p,
-        nome: name,
-        role: SEAT_ROLES[p - 1],
-        c: SEAT_COLORS[p - 1],
-        peso: "—",
-      };
-    });
-  }, [activeTemplate]);
+  const { data: classes = [], isLoading } = useClassesByDate(profile?.tenant_id, date);
 
   return (
     <PageScaffold
-      eyebrow="QUI 09 MAIO · 06:00 · AVANÇADO"
+      eyebrow={fmtDateBR(date)}
       title="Tripulação OC6"
       back
       showTabBar={false}
-      trailing={
-        <button
-          type="button"
-          className="px-3 py-2 rounded-[10px] bg-hv-navy text-white text-xs font-bold"
-        >
-          Salvar
-        </button>
-      }
     >
-      {/* Chips de templates */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4">
-        {(templates && templates.length > 0
-          ? templates.map((t, i) => ({ l: t.name, on: i === activeTemplateIdx, idx: i, plus: false }))
-          : [{ l: "Hoje", on: true, idx: 0, plus: false }, { l: "Travessia 18mai", on: false, idx: 1, plus: false }, { l: "Treino base", on: false, idx: 2, plus: false }]
-        ).map((t, i) => (
-          <button
-            type="button"
-            key={i}
-            onClick={() => "idx" in t && setActiveTemplateIdx(t.idx)}
-            className={cn(
-              "shrink-0 hv-chip cursor-pointer",
-              t.on
-                ? "!bg-hv-navy !text-white"
-                : "!bg-hv-surface !text-hv-text-2 border border-hv-line",
-            )}
-          >
-            {t.l}
-          </button>
-        ))}
-        <button
-          type="button"
-          className="shrink-0 hv-chip !bg-transparent !text-hv-text-2 border border-dashed border-hv-line cursor-pointer"
-        >
-          + template
-        </button>
+      {/* Date picker */}
+      <div className="hv-card p-3 flex items-center gap-3">
+        <HVIcon name="calendar" size={18} color="hsl(var(--hv-text-2))" />
+        <input
+          type="date"
+          value={fmtDate(date)}
+          onChange={(e) => {
+            const [y, m, d] = e.target.value.split("-").map(Number);
+            if (y && m && d) setDate(new Date(y, m - 1, d));
+          }}
+          className="flex-1 bg-transparent text-sm font-semibold focus:outline-none"
+        />
       </div>
 
-      {/* Canoa visualização */}
-      <div
-        className="hv-card relative overflow-hidden text-white"
-        style={{
-          padding: "18px 18px 14px",
-          background: "linear-gradient(180deg, #061826, #0E3A5F)",
-        }}
-      >
-        <svg viewBox="0 0 320 100" className="absolute left-0 right-0 bottom-0 w-full opacity-40">
-          <path d="M0 60 Q80 40 160 60 T320 60 L320 100 L0 100Z" fill="rgba(37,199,229,0.4)" />
-          <path d="M0 80 Q80 60 160 80 T320 80 L320 100 L0 100Z" fill="rgba(37,199,229,0.6)" />
-        </svg>
-        <div className="hv-mono text-[10px] tracking-[0.16em] opacity-70">
-          {activeTemplate?.boat?.name?.toUpperCase() || "OC6 · NÁHIA"}
+      {isLoading ? (
+        <Loader />
+      ) : classes.length === 0 ? (
+        <div className="hv-card p-6 text-center text-sm text-hv-text-2">
+          Nenhuma turma neste dia.
         </div>
-        <div className="font-display font-bold text-[18px] mt-0.5 text-white">
-          {activeTemplate?.name || "Tripulação titular"}
-        </div>
+      ) : (
+        classes.map((c) => <ClassCrewCard key={c.id} classId={c.id} date={date} title={`${c.start_time.slice(0, 5)} · ${c.venue?.name ?? "—"}`} />)
+      )}
+    </PageScaffold>
+  );
+}
 
-        {/* assentos */}
-        <div className="mx-auto mt-4 mb-1 relative" style={{ maxWidth: 84 }}>
-          <svg viewBox="0 0 84 360" className="absolute inset-0 w-full h-full">
-            <path
-              d="M42 6 Q12 30 12 80 L12 320 Q12 350 42 354 Q72 350 72 320 L72 80 Q72 30 42 6Z"
-              fill="none"
-              stroke="rgba(37,199,229,0.35)"
-              strokeWidth="1.5"
-            />
-            <path
-              d="M42 6 L42 354"
-              stroke="rgba(37,199,229,0.15)"
-              strokeWidth="1"
-              strokeDasharray="2 4"
-            />
-          </svg>
-          <div className="relative flex flex-col gap-2.5 py-[18px]">
-            {seats.map((s) => (
-              <div key={s.p} className="flex justify-center">
+function ClassCrewCard({
+  classId,
+  date,
+  title,
+}: {
+  classId: string;
+  date: Date;
+  title: string;
+}) {
+  const { data: assignments = [], isLoading } = useCrewAssignmentsForClass(classId, date);
+
+  // Group by boat_id
+  const boats = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        boat: NonNullable<CrewAssignmentForCoach["boat"]> | null;
+        seats: Array<CrewAssignmentForCoach | null>;
+      }
+    >();
+    assignments.forEach((a) => {
+      const key = a.boat_id;
+      if (!map.has(key)) {
+        map.set(key, { boat: a.boat, seats: new Array(6).fill(null) });
+      }
+      const slot = map.get(key)!;
+      const idx = Math.min(5, Math.max(0, a.seat_position - 1));
+      slot.seats[idx] = a;
+    });
+    return Array.from(map.values());
+  }, [assignments]);
+
+  return (
+    <div className="space-y-2">
+      <h3 className="hv-eyebrow !text-hv-text-2 !text-[12px] !tracking-[0.14em] mt-3">
+        {title}
+      </h3>
+
+      {isLoading ? (
+        <div className="hv-card p-4 text-center text-sm text-hv-text-3">Carregando tripulação…</div>
+      ) : boats.length === 0 ? (
+        <div className="hv-card p-4 text-center text-sm text-hv-text-3">
+          Sem tripulação atribuída.
+        </div>
+      ) : (
+        boats.map(({ boat, seats }, bi) => (
+          <BoatCard key={boat?.id ?? `b-${bi}`} boat={boat} seats={seats} />
+        ))
+      )}
+    </div>
+  );
+}
+
+function BoatCard({
+  boat,
+  seats,
+}: {
+  boat: NonNullable<CrewAssignmentForCoach["boat"]> | null;
+  seats: Array<CrewAssignmentForCoach | null>;
+}) {
+  return (
+    <div
+      className="hv-card relative overflow-hidden text-white"
+      style={{
+        padding: "16px 16px 12px",
+        background: "linear-gradient(180deg, #061826, #0E3A5F)",
+      }}
+    >
+      <svg viewBox="0 0 320 100" className="absolute left-0 right-0 bottom-0 w-full opacity-40 pointer-events-none">
+        <path d="M0 60 Q80 40 160 60 T320 60 L320 100 L0 100Z" fill="rgba(37,199,229,0.4)" />
+        <path d="M0 80 Q80 60 160 80 T320 80 L320 100 L0 100Z" fill="rgba(37,199,229,0.6)" />
+      </svg>
+      <div className="hv-mono text-[10px] tracking-[0.16em] opacity-70 relative">
+        {(boat?.name || "OC6").toUpperCase()}
+      </div>
+      <div className="font-display font-bold text-[16px] mt-0.5 text-white relative">
+        {boat?.type ? boat.type.toUpperCase() : "Canoa"}
+      </div>
+
+      <div className="mx-auto mt-3 mb-1 relative" style={{ maxWidth: 84 }}>
+        <svg viewBox="0 0 84 360" className="absolute inset-0 w-full h-full">
+          <path
+            d="M42 6 Q12 30 12 80 L12 320 Q12 350 42 354 Q72 350 72 320 L72 80 Q72 30 42 6Z"
+            fill="none"
+            stroke="rgba(37,199,229,0.35)"
+            strokeWidth="1.5"
+          />
+          <path
+            d="M42 6 L42 354"
+            stroke="rgba(37,199,229,0.15)"
+            strokeWidth="1"
+            strokeDasharray="2 4"
+          />
+        </svg>
+        <div className="relative flex flex-col gap-2 py-[14px]">
+          {seats.map((a, i) => {
+            const pos = i + 1;
+            const name = nameForAssignment(a);
+            const color = SEAT_COLORS[i % SEAT_COLORS.length];
+            const empty = !a;
+            return (
+              <div key={pos} className="flex justify-center">
                 <div
-                  className="relative grid place-items-center font-display font-extrabold text-white text-[16px]"
+                  className="relative grid place-items-center font-display font-extrabold text-white text-[14px]"
                   style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 24,
-                    background: s.c,
-                    border: "3px solid rgba(37,199,229,0.55)",
+                    width: 42,
+                    height: 42,
+                    borderRadius: 21,
+                    background: empty ? "rgba(255,255,255,0.08)" : color,
+                    border: "2.5px solid rgba(37,199,229,0.5)",
                   }}
                 >
-                  {getInitial(s.nome)}
+                  {empty ? "—" : getInitial(name)}
                   <span
                     className="hv-mono absolute font-bold"
                     style={{
                       left: -22,
-                      top: 14,
-                      fontSize: 11,
+                      top: 12,
+                      fontSize: 10,
                       color: "rgba(255,255,255,0.8)",
                     }}
                   >
-                    {s.p}
+                    {pos}
                   </span>
                 </div>
               </div>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* lista de assentos */}
-      <h3 className="hv-eyebrow !text-hv-text-2 !text-[12px] !tracking-[0.14em] mt-4 mb-1">
-        Assentos · arraste para reorganizar
-      </h3>
-      <div className="hv-card overflow-hidden">
-        {isLoading && !templates ? (
-          <div className="px-3.5 py-6 text-center text-hv-text-3 text-sm">Carregando tripulação…</div>
-        ) : (
-          seats.map((s, i, arr) => (
+      {/* lista de assentos por posição */}
+      <div className="relative mt-3 space-y-1.5">
+        {seats.map((a, i) => {
+          const pos = i + 1;
+          const name = nameForAssignment(a);
+          const role = SEAT_ROLES[i] ?? "";
+          return (
             <div
-              key={s.p}
-              className={cn(
-                "flex items-center gap-3 px-3.5 py-2.5",
-                i < arr.length - 1 && "border-b border-hv-line",
-              )}
+              key={pos}
+              className="flex items-center gap-2 text-[12px] text-white/90"
             >
-              <div
-                className="grid place-items-center font-mono font-bold"
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 13,
-                  background: "hsl(var(--hv-bg))",
-                  color: "hsl(var(--hv-text-2))",
-                  fontSize: 12,
-                }}
-              >
-                {s.p}
-              </div>
-              <div
-                className="grid place-items-center font-display font-bold text-white"
-                style={{
-                  width: 30,
-                  height: 30,
-                  borderRadius: 15,
-                  background: s.c,
-                }}
-              >
-                {getInitial(s.nome)}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[13px] font-bold truncate">{s.nome}</div>
-                <div className="text-[11px] text-hv-text-3 mt-px">{s.role}</div>
-              </div>
-              <span className="hv-mono text-[11px] text-hv-text-3 tracking-[0.04em]">
-                {s.peso}
-              </span>
-              <HVIcon name="menu" size={16} color="hsl(var(--hv-text-3))" />
+              <span className="hv-mono w-5 text-[10px] opacity-70">{pos}</span>
+              <span className="flex-1 font-semibold truncate">{name || "—"}</span>
+              <span className="opacity-60 text-[10px] hidden sm:inline">{role}</span>
             </div>
-          ))
-        )}
+          );
+        })}
       </div>
-    </PageScaffold>
+    </div>
   );
+}
+
+function nameForAssignment(a: CrewAssignmentForCoach | null): string | null {
+  if (!a) return null;
+  return a.student?.profile?.full_name || a.staff?.full_name || a.guest_name || null;
 }

@@ -1,7 +1,9 @@
 // Hooks de Super Admin — agregam dados de tenants, financeiro, contratos, planos,
 // banners globais, parceiros globais e push notifications.
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
 
 // ───────────────────── Tenants ─────────────────────
@@ -627,6 +629,142 @@ export function useSuperPushStats() {
         daily_sends,
         recent_logs: all.slice(0, 20),
       };
+    },
+  });
+}
+
+// ───────────────────── Criar tenant: hooks ─────────────────────
+
+export type SlugStatus = "idle" | "checking" | "available" | "taken" | "invalid";
+
+/**
+ * Debounced check de disponibilidade do slug (500ms).
+ * Retorna o status atual; useEffect interno trata o debounce.
+ */
+export function useCheckSlugAvailable(slug: string): SlugStatus {
+  const [status, setStatus] = useState<SlugStatus>("idle");
+
+  useEffect(() => {
+    if (!slug) {
+      setStatus("idle");
+      return;
+    }
+    if (slug.length < 3) {
+      setStatus("invalid");
+      return;
+    }
+
+    setStatus("checking");
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const { data, error } = await supabase
+          .from("tenants")
+          .select("id")
+          .eq("slug", slug)
+          .limit(1);
+        if (cancelled) return;
+        if (error) {
+          setStatus("idle");
+          return;
+        }
+        setStatus(data && data.length > 0 ? "taken" : "available");
+      } catch {
+        if (!cancelled) setStatus("idle");
+      }
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [slug]);
+
+  return status;
+}
+
+export interface PlatformPlan {
+  id: string;
+  name: string;
+  slug: string | null;
+  description: string | null;
+  price_cents: number;
+  billing_type: string;
+  features: string[];
+  active: boolean;
+  display_order: number | null;
+}
+
+export function usePlatformPlans(activeOnly = true) {
+  return useQuery({
+    queryKey: ["platform-plans", activeOnly],
+    queryFn: async (): Promise<PlatformPlan[]> => {
+      let q = supabase
+        .from("platform_plans")
+        .select(
+          "id, name, slug, description, price_cents, billing_type, features, active, display_order",
+        )
+        .order("display_order", { ascending: true });
+      if (activeOnly) q = q.eq("active", true);
+      const { data, error } = await q;
+      if (error) throw error;
+      return (data ?? []).map((p) => ({
+        ...p,
+        features: Array.isArray(p.features)
+          ? (p.features as unknown[]).filter(
+              (x): x is string => typeof x === "string",
+            )
+          : [],
+      })) as PlatformPlan[];
+    },
+  });
+}
+
+export interface CreateTenantPayload {
+  name: string;
+  slug: string;
+  business_template: string;
+  feature_flags?: Record<string, boolean>;
+  platform_plan_id: string | null;
+  ownerName: string;
+  ownerEmail: string;
+  ownerPhone: string;
+  ownerPassword: string;
+  document?: string;
+  address?: string;
+}
+
+export interface CreateTenantResult {
+  success: boolean;
+  tenant_id?: string;
+  owner_id?: string;
+  error?: string;
+}
+
+export function useCreateTenantMutation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (
+      payload: CreateTenantPayload,
+    ): Promise<CreateTenantResult> => {
+      const response = await supabase.functions.invoke("create-tenant", {
+        body: payload,
+      });
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao criar filial");
+      }
+      const data = response.data as CreateTenantResult;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["super", "tenants"] });
+      qc.invalidateQueries({ queryKey: ["super", "financeiro"] });
+      toast.success("Filial criada com sucesso");
+    },
+    onError: (err: Error) => {
+      console.error("createTenant error:", err);
+      toast.error(err.message || "Erro ao criar filial");
     },
   });
 }

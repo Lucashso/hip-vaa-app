@@ -1,11 +1,13 @@
-// Parceiros do clube — strip horizontal + cards de benefícios com ações.
+// Parceiros do clube — strip + cards de benefícios com ações trackeadas.
 
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { PageScaffold } from "@/components/PageScaffold";
 import { HVIcon } from "@/lib/HVIcon";
 import { useAuth } from "@/hooks/useAuth";
 import { usePartners, usePartnerActions, type PartnerAction } from "@/hooks/usePartners";
 import { getInitial } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { getWhatsAppUrl } from "@/lib/phone";
 import { toast } from "sonner";
 
 const PARTNER_COLORS = [
@@ -42,13 +44,12 @@ function actionDisplay(a: PartnerAction): { label: string; code: string } {
 }
 
 export default function StudentParceiros() {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const tenantId = profile?.tenant_id || undefined;
   const { data: partners = [], isLoading } = usePartners(tenantId);
   const partnerIds = useMemo(() => partners.map((p) => p.id), [partners]);
   const { data: actions = [] } = usePartnerActions(partnerIds);
 
-  // Group primary action per partner
   const primaryByPartner = useMemo(() => {
     const map = new Map<string, PartnerAction>();
     for (const a of actions) {
@@ -59,15 +60,55 @@ export default function StudentParceiros() {
     return map;
   }, [actions]);
 
-  const handleCopy = async (code: string) => {
-    if (!code || code === "via check-in") return;
-    try {
-      await navigator.clipboard.writeText(code);
-      toast.success("Código copiado!");
-    } catch {
-      toast.error("Não rolou copiar.");
-    }
-  };
+  const track = useCallback(
+    async (action: PartnerAction) => {
+      if (!tenantId) return;
+      try {
+        await supabase.from("partner_analytics").insert({
+          partner_id: action.partner_id,
+          partner_action_id: action.id,
+          tenant_id: tenantId,
+          event_type: "click",
+          action_type: action.action_type ?? null,
+          user_id: user?.id ?? null,
+        });
+      } catch (err) {
+        // Falhar silenciosamente — analytics não pode bloquear UX.
+        console.warn("partner_analytics insert falhou", err);
+      }
+    },
+    [tenantId, user?.id],
+  );
+
+  const handleAction = useCallback(
+    async (action: PartnerAction) => {
+      void track(action);
+      const type = (action.action_type || "").toLowerCase();
+      const value = action.value || "";
+      if (type === "whatsapp") {
+        if (!value) {
+          toast.error("WhatsApp não configurado");
+          return;
+        }
+        const msg = `Olá, sou aluno do clube e gostaria de saber mais sobre ${action.label}.`;
+        window.open(getWhatsAppUrl(value, msg), "_blank", "noopener");
+      } else if (type === "link" || type === "url") {
+        if (!value) return;
+        window.open(value, "_blank", "noopener");
+      } else if (type === "code" || type === "coupon") {
+        if (!value) return;
+        try {
+          await navigator.clipboard.writeText(value);
+          toast.success("Código copiado!");
+        } catch {
+          toast.error("Não rolou copiar");
+        }
+      } else if (type === "checkin" || type === "auto") {
+        toast.message("Benefício liberado no check-in");
+      }
+    },
+    [track],
+  );
 
   return (
     <PageScaffold eyebrow="BENEFÍCIOS DO CLUBE" title="Parceiros">
@@ -80,16 +121,13 @@ export default function StudentParceiros() {
           <div className="w-14 h-14 mx-auto rounded-[16px] bg-hv-foam grid place-items-center mb-3">
             <HVIcon name="gift" size={26} color="hsl(var(--hv-navy))" />
           </div>
-          <div className="font-display text-[18px] text-hv-navy">
-            Em breve
-          </div>
+          <div className="font-display text-[18px] text-hv-navy">Em breve</div>
           <div className="text-sm text-hv-text-2 mt-1.5 max-w-[260px] mx-auto">
             Seu clube ainda não cadastrou parceiros. Logo logo aparecem benefícios aqui.
           </div>
         </div>
       ) : (
         <>
-          {/* Strip horizontal */}
           <div className="flex gap-2.5 overflow-x-auto pb-3.5 -mx-1 px-1">
             {partners.map((p, i) => (
               <div
@@ -117,7 +155,6 @@ export default function StudentParceiros() {
             ))}
           </div>
 
-          {/* Cards de benefício */}
           <h3 className="text-[12px] uppercase tracking-[1.4px] text-hv-text-2 font-bold mb-2.5">
             Benefícios ativos
           </h3>
@@ -126,10 +163,7 @@ export default function StudentParceiros() {
             const c = colorFor(i);
             const disp = action ? actionDisplay(action) : null;
             return (
-              <div
-                key={p.id}
-                className="hv-card p-3.5 mb-2.5 relative overflow-hidden"
-              >
+              <div key={p.id} className="hv-card p-3.5 mb-2.5 relative overflow-hidden">
                 <div
                   className="absolute top-0 right-0 bottom-0 w-1.5"
                   style={{ background: c }}
@@ -161,23 +195,16 @@ export default function StudentParceiros() {
                         {p.description}
                       </div>
                     )}
-                    {disp && (
-                      <div className="mt-2.5 flex gap-1.5 items-center">
-                        <span
-                          className="hv-mono px-2 py-1 rounded-md bg-hv-bg text-[11px] font-bold tracking-wider border border-dashed border-hv-line"
+                    {disp && action && (
+                      <div className="mt-2.5 flex gap-1.5 items-center flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleAction(action)}
+                          className="hv-mono px-2.5 py-1.5 rounded-md bg-hv-bg text-[11px] font-bold tracking-wider border border-dashed border-hv-line hover:bg-hv-foam"
                           style={{ color: c }}
                         >
                           {disp.code}
-                        </span>
-                        {disp.code !== "via check-in" && disp.code !== "" && (
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(disp.code)}
-                            className="text-hv-text-3 hover:text-foreground"
-                          >
-                            <HVIcon name="copy" size={14} />
-                          </button>
-                        )}
+                        </button>
                       </div>
                     )}
                   </div>

@@ -26,6 +26,13 @@ export interface ProductOrder {
     type: string | null;
     price_cents: number;
   } | null;
+  invoice?: {
+    id: string;
+    status: string | null;
+    pix_qr: string | null;
+    pix_qr_base64: string | null;
+    pix_expires_at: string | null;
+  } | null;
 }
 
 /** Pedidos da loja feitos pelo aluno. */
@@ -37,7 +44,7 @@ export function useMyOrders(studentId?: string) {
       const { data, error } = await supabase
         .from("product_orders")
         .select(
-          "*, product:products(id, name, description, photo_url, type, price_cents)",
+          "*, product:products(id, name, description, photo_url, type, price_cents), invoice:invoices(id, status, pix_qr, pix_qr_base64, pix_expires_at)",
         )
         .eq("student_id", studentId)
         .order("created_at", { ascending: false });

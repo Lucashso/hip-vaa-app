@@ -1,11 +1,12 @@
-// Meus pedidos — lista de pedidos da loja.
+// Meus pedidos — lista pedidos da loja + status traduzido + modal PIX pra pendentes.
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { PageScaffold } from "@/components/PageScaffold";
 import { HVIcon } from "@/lib/HVIcon";
 import { useMyStudent } from "@/hooks/useStudent";
 import { useMyOrders, type ProductOrder } from "@/hooks/useMyOrders";
 import { cn, formatBRL } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface StatusInfo {
   label: string;
@@ -20,6 +21,7 @@ function statusInfo(status: string): StatusInfo {
     case "shipped":
     case "enviado":
       return { label: "Enviado", color: "hsl(var(--hv-blue))" };
+    case "processing":
     case "preparing":
     case "separation":
     case "separating":
@@ -55,8 +57,9 @@ interface Group {
 export default function StudentMeusPedidos() {
   const { data: student } = useMyStudent();
   const { data: orders = [], isLoading } = useMyOrders(student?.id);
+  const [pixOrder, setPixOrder] = useState<ProductOrder | null>(null);
+  const [copied, setCopied] = useState(false);
 
-  // O schema é 1 linha = 1 item; agrupamos por created_at minute pra simular "pedido"
   const groups = useMemo<Group[]>(() => {
     const buckets = new Map<string, ProductOrder[]>();
     for (const o of orders) {
@@ -71,6 +74,19 @@ export default function StudentMeusPedidos() {
       items,
     }));
   }, [orders]);
+
+  const handleCopy = async () => {
+    const code = pixOrder?.invoice?.pix_qr;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      setCopied(true);
+      toast.success("Código PIX copiado!");
+      setTimeout(() => setCopied(false), 3000);
+    } catch {
+      toast.error("Não foi possível copiar");
+    }
+  };
 
   return (
     <PageScaffold
@@ -98,6 +114,8 @@ export default function StudentMeusPedidos() {
           const info = statusInfo(g.order.status);
           const delivered =
             info.label === "Entregue" || g.order.status === "delivered";
+          const isPending = (g.order.status || "").toLowerCase() === "pending";
+          const hasPix = !!g.order.invoice?.pix_qr;
           return (
             <div key={g.order.id} className="hv-card p-3.5">
               <div className="flex items-center justify-between">
@@ -142,7 +160,7 @@ export default function StudentMeusPedidos() {
                       </div>
                       <div className="text-hv-text-3 font-mono text-[10px]">
                         {item.size ? `${item.size} · ` : ""}
-                        {formatBRL((item.amount_cents || 0))}
+                        {formatBRL(item.amount_cents || 0)}
                       </div>
                     </div>
                     <span className="text-[12px] font-bold font-mono">
@@ -152,6 +170,16 @@ export default function StudentMeusPedidos() {
                 ))}
               </div>
               <div className="flex gap-2 mt-2.5">
+                {isPending && hasPix && (
+                  <button
+                    type="button"
+                    onClick={() => setPixOrder(g.order)}
+                    className="flex-1 px-3 py-2.5 rounded-[10px] bg-hv-cyan text-hv-ink border-none font-bold text-[12px] flex items-center justify-center gap-1.5"
+                  >
+                    <HVIcon name="qr" size={14} stroke={2.2} />
+                    Pagar com PIX
+                  </button>
+                )}
                 <button
                   type="button"
                   className={cn(
@@ -172,6 +200,51 @@ export default function StudentMeusPedidos() {
             </div>
           );
         })
+      )}
+
+      {pixOrder?.invoice && (
+        <div className="fixed inset-0 z-50 bg-black/40 grid place-items-end">
+          <div className="bg-background rounded-t-[24px] w-full max-w-md mx-auto p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="font-display text-[18px]">
+                Pagamento PIX
+              </div>
+              <button
+                type="button"
+                onClick={() => setPixOrder(null)}
+                className="w-9 h-9 rounded-[10px] grid place-items-center hover:bg-hv-foam"
+              >
+                <HVIcon name="x" size={18} />
+              </button>
+            </div>
+            <div className="text-center space-y-3">
+              <div className="font-display text-[24px] font-extrabold text-hv-navy">
+                {formatBRL((pixOrder.amount_cents || 0) * (pixOrder.quantity || 1))}
+              </div>
+              <div className="mx-auto w-[220px] h-[220px] bg-white rounded-[16px] grid place-items-center overflow-hidden border border-hv-line">
+                {pixOrder.invoice.pix_qr_base64 ? (
+                  <img
+                    src={`data:image/png;base64,${pixOrder.invoice.pix_qr_base64}`}
+                    alt="QR Code PIX"
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="text-xs text-hv-text-3 px-3 text-center">
+                    QR não disponível. Use o código abaixo.
+                  </div>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={handleCopy}
+                className="w-full h-11 rounded-[12px] border border-hv-line bg-hv-surface font-semibold text-sm flex items-center justify-center gap-2"
+              >
+                <HVIcon name={copied ? "check" : "copy"} size={16} />
+                {copied ? "Copiado!" : "Copiar código PIX"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </PageScaffold>
   );

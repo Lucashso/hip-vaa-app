@@ -10,7 +10,6 @@ import Onboarding from "@/pages/Onboarding";
 
 const StudentHome = lazy(() => import("@/pages/student/Home"));
 const StudentCheckin = lazy(() => import("@/pages/student/Checkin"));
-const StudentCheckinPin = lazy(() => import("@/pages/student/CheckinPin"));
 const StudentAulas = lazy(() => import("@/pages/student/Aulas"));
 const StudentPlano = lazy(() => import("@/pages/student/Plano"));
 const StudentLoja = lazy(() => import("@/pages/student/Loja"));
@@ -25,7 +24,12 @@ const StudentTreino = lazy(() => import("@/pages/student/Treino"));
 const StudentResultadoTreino = lazy(() => import("@/pages/student/ResultadoTreino"));
 const StudentMeusPedidos = lazy(() => import("@/pages/student/MeusPedidos"));
 const StudentParceiros = lazy(() => import("@/pages/student/Parceiros"));
-const StudentAvulso = lazy(() => import("@/pages/student/Avulso"));
+
+const PublicCadastroPagamento = lazy(() => import("@/pages/public/CadastroPagamento"));
+const PublicCadastroSucesso = lazy(() => import("@/pages/public/CadastroSucesso"));
+const PublicAvulso = lazy(() => import("@/pages/public/Avulso"));
+const PublicAvulsoPagamento = lazy(() => import("@/pages/public/AvulsoPagamento"));
+const PublicAvulsoSucesso = lazy(() => import("@/pages/public/AvulsoSucesso"));
 
 const EquipeRoleSwitcher = lazy(() => import("@/pages/equipe/RoleSwitcher"));
 const EquipeFilialHome = lazy(() => import("@/pages/equipe/FilialHome"));
@@ -49,7 +53,6 @@ const AdminBanners = lazy(() => import("@/pages/admin/Banners"));
 const AdminUsuarios = lazy(() => import("@/pages/admin/Usuarios"));
 const AdminRelatorios = lazy(() => import("@/pages/admin/Relatorios"));
 const AdminParceiros = lazy(() => import("@/pages/admin/Parceiros"));
-const AdminTema = lazy(() => import("@/pages/admin/Tema"));
 const AdminBiblioteca = lazy(() => import("@/pages/admin/Biblioteca"));
 const AdminQuestionario = lazy(() => import("@/pages/admin/Questionario"));
 const AdminEquipes = lazy(() => import("@/pages/admin/Equipes"));
@@ -69,6 +72,12 @@ const SuperConfig = lazy(() => import("@/pages/super/Config"));
 const SuperPushStats = lazy(() => import("@/pages/super/PushStats"));
 const SuperCriarTenant = lazy(() => import("@/pages/super/CriarTenant"));
 const TourLanding = lazy(() => import("@/pages/public/TourLanding"));
+const ConverterStudent = lazy(() => import("@/pages/public/ConverterStudent"));
+const ConverterPagamento = lazy(() => import("@/pages/public/ConverterPagamento"));
+const ConverterSucesso = lazy(() => import("@/pages/public/ConverterSucesso"));
+const Privacidade = lazy(() => import("@/pages/public/Privacidade"));
+const EsqueciSenha = lazy(() => import("@/pages/EsqueciSenha"));
+const ResetarSenha = lazy(() => import("@/pages/ResetarSenha"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -119,14 +128,33 @@ export default function App() {
           <Suspense fallback={<Loader />}>
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/esqueci-senha" element={<EsqueciSenha />} />
+              <Route path="/resetar-senha" element={<ResetarSenha />} />
+              <Route path="/privacidade" element={<Privacidade />} />
+              <Route path="/privacy" element={<Privacidade />} />
               <Route path="/bem-vindo" element={<Onboarding />} />
               <Route path="/tours/:tenantSlug/:tourSlug" element={<TourLanding />} />
               <Route path="/cadastro" element={<StudentCadastro />} />
+              <Route path="/cadastro/pagamento" element={<PublicCadastroPagamento />} />
+              <Route path="/cadastro/sucesso" element={<PublicCadastroSucesso />} />
               <Route path="/cadastro/:tenantSlug" element={<StudentCadastro />} />
+              <Route path="/:slug/cadastro/pagamento" element={<PublicCadastroPagamento />} />
+              <Route path="/:slug/cadastro/sucesso" element={<PublicCadastroSucesso />} />
+              <Route path="/avulso" element={<PublicAvulso />} />
+              <Route path="/avulso/pagamento" element={<PublicAvulsoPagamento />} />
+              <Route path="/avulso/sucesso" element={<PublicAvulsoSucesso />} />
+              <Route path="/:slug/avulso" element={<PublicAvulso />} />
+              <Route path="/:slug/avulso/pagamento" element={<PublicAvulsoPagamento />} />
+              <Route path="/:slug/avulso/sucesso" element={<PublicAvulsoSucesso />} />
+              <Route path="/converter/:token" element={<ConverterStudent />} />
+              <Route path="/converter/:token/pagamento" element={<ConverterPagamento />} />
+              <Route path="/converter/:token/sucesso" element={<ConverterSucesso />} />
+              <Route path="/:slug/converter/:token" element={<ConverterStudent />} />
+              <Route path="/:slug/converter/:token/pagamento" element={<ConverterPagamento />} />
+              <Route path="/:slug/converter/:token/sucesso" element={<ConverterSucesso />} />
 
               <Route path="/" element={<ProtectedRoute><StudentOnly><StudentHome /></StudentOnly></ProtectedRoute>} />
               <Route path="/checkin" element={<ProtectedRoute><StudentOnly><StudentCheckin /></StudentOnly></ProtectedRoute>} />
-              <Route path="/checkin/pin" element={<ProtectedRoute><StudentOnly><StudentCheckinPin /></StudentOnly></ProtectedRoute>} />
               <Route path="/aulas" element={<ProtectedRoute><StudentOnly><StudentAulas /></StudentOnly></ProtectedRoute>} />
               <Route path="/plano" element={<ProtectedRoute><StudentOnly><StudentPlano /></StudentOnly></ProtectedRoute>} />
               <Route path="/loja" element={<ProtectedRoute><StudentOnly><StudentLoja /></StudentOnly></ProtectedRoute>} />
@@ -141,7 +169,6 @@ export default function App() {
               <Route path="/student/treino/:id/resultado" element={<ProtectedRoute><StudentOnly><StudentResultadoTreino /></StudentOnly></ProtectedRoute>} />
               <Route path="/student/pedidos" element={<ProtectedRoute><StudentOnly><StudentMeusPedidos /></StudentOnly></ProtectedRoute>} />
               <Route path="/student/parceiros" element={<ProtectedRoute><StudentOnly><StudentParceiros /></StudentOnly></ProtectedRoute>} />
-              <Route path="/student/avulso" element={<ProtectedRoute><StudentOnly><StudentAvulso /></StudentOnly></ProtectedRoute>} />
 
               <Route path="/equipe" element={<ProtectedRoute><StaffOnly><EquipeFilialHome /></StaffOnly></ProtectedRoute>} />
               <Route path="/equipe/papel" element={<ProtectedRoute><StaffOnly><EquipeRoleSwitcher /></StaffOnly></ProtectedRoute>} />
@@ -165,7 +192,6 @@ export default function App() {
               <Route path="/admin/usuarios" element={<ProtectedRoute><AdminOnly><AdminUsuarios /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/relatorios" element={<ProtectedRoute><AdminOnly><AdminRelatorios /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/parceiros" element={<ProtectedRoute><AdminOnly><AdminParceiros /></AdminOnly></ProtectedRoute>} />
-              <Route path="/admin/tema" element={<ProtectedRoute><AdminOnly><AdminTema /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/biblioteca" element={<ProtectedRoute><AdminOnly><AdminBiblioteca /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/questionario" element={<ProtectedRoute><AdminOnly><AdminQuestionario /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/equipes" element={<ProtectedRoute><AdminOnly><AdminEquipes /></AdminOnly></ProtectedRoute>} />

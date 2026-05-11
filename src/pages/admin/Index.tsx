@@ -64,7 +64,6 @@ const SECTIONS: { title: string; items: AdminLink[] }[] = [
     title: "Filial",
     items: [
       { to: "/equipe/config", icon: "settings", label: "Configurações", caption: "Identidade, regras, gateways", color: "#0E3A5F" },
-      { to: "/admin/tema", icon: "star", label: "Tema & marca", caption: "Personalizar app", color: "#FF6B4A" },
       { to: "/admin/termos", icon: "credit", label: "Termos de uso", caption: "Versões", color: "#7B2D9F" },
       { to: "/admin/ajuda", icon: "share", label: "Ajuda & suporte", caption: "FAQ + WhatsApp", color: "#2FB37A" },
     ],
