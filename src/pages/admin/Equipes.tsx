@@ -1,21 +1,19 @@
-// Admin · Equipes / Times — CRUD crew_templates + Sheet de assentos.
+// Admin · Equipes / Times — CRUD crew_templates + CrewOrganizer de assentos.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AdminHeader } from "@/components/AdminHeader";
 import { Loader } from "@/components/Loader";
 import { Modal, ConfirmDialog } from "@/components/Modal";
 import { FieldText, FieldTextArea, FieldSelect } from "@/components/Field";
 import { HVIcon } from "@/lib/HVIcon";
+import { CrewOrganizer } from "@/components/Crew/CrewOrganizer";
 import { useAuth } from "@/hooks/useAuth";
 import { useBoats } from "@/hooks/useBoats";
 import {
   useCrewTemplates,
-  useCrewTemplateSeats,
   useCreateCrewTemplate,
   useUpdateCrewTemplate,
   useDeleteCrewTemplate,
-  useSaveCrewSeats,
-  useTenantStudents,
   type CrewTemplate,
   type CrewTemplateInput,
 } from "@/hooks/useCrew";
@@ -48,7 +46,7 @@ export default function AdminEquipes() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CrewTemplate | null>(null);
   const [form, setForm] = useState<CrewTemplateInput>(EMPTY);
-  const [seatsTeam, setSeatsTeam] = useState<CrewTemplate | null>(null);
+  const [organizerTeam, setOrganizerTeam] = useState<CrewTemplate | null>(null);
   const [confirmDel, setConfirmDel] = useState<CrewTemplate | null>(null);
 
   const onNew = () => {
@@ -108,6 +106,11 @@ export default function AdminEquipes() {
                       {t.boat?.name ?? "Sem embarcação"}
                       {t.boat?.capacity ? ` · OC${t.boat.capacity}` : ""}
                     </div>
+                    {t.description && (
+                      <div className="text-[11px] text-hv-text-3 mt-0.5 truncate opacity-70">
+                        {t.description}
+                      </div>
+                    )}
                   </div>
                   <div
                     className="w-[38px] h-[38px] rounded-[12px] grid place-items-center text-white shrink-0"
@@ -119,11 +122,11 @@ export default function AdminEquipes() {
                 <div className="flex gap-1.5 mt-3">
                   <button
                     type="button"
-                    onClick={() => setSeatsTeam(t)}
-                    className="flex-1 py-2 rounded-[8px] text-[11px] font-bold text-white border-0"
+                    onClick={() => setOrganizerTeam(t)}
+                    className="flex-1 py-2 rounded-[8px] text-[11px] font-bold text-white border-0 flex items-center justify-center gap-1"
                     style={{ background: "hsl(var(--hv-navy))" }}
                   >
-                    Assentos
+                    <HVIcon name="edit" size={12} /> Tripulação
                   </button>
                   <button
                     type="button"
@@ -151,6 +154,7 @@ export default function AdminEquipes() {
         )}
       </div>
 
+      {/* Dialog novo/editar template */}
       <Modal
         open={dialogOpen}
         onClose={() => setDialogOpen(false)}
@@ -212,12 +216,24 @@ export default function AdminEquipes() {
         />
       </Modal>
 
-      <SeatsSheet
-        team={seatsTeam}
-        tenantId={tenantId}
-        onClose={() => setSeatsTeam(null)}
-      />
+      {/* Modal do CrewOrganizer */}
+      <Modal
+        open={!!organizerTeam}
+        onClose={() => setOrganizerTeam(null)}
+        title={organizerTeam ? `Tripulação · ${organizerTeam.name}` : "Tripulação"}
+        subtitle="EDITAR ASSENTOS"
+        maxWidth={520}
+      >
+        {organizerTeam && (
+          <CrewOrganizer
+            template={organizerTeam}
+            tenantId={tenantId}
+            onSave={() => setOrganizerTeam(null)}
+          />
+        )}
+      </Modal>
 
+      {/* Confirm delete */}
       <ConfirmDialog
         open={!!confirmDel}
         onClose={() => setConfirmDel(null)}
@@ -232,123 +248,5 @@ export default function AdminEquipes() {
         loading={deleteMut.isPending}
       />
     </div>
-  );
-}
-
-function SeatsSheet({
-  team,
-  tenantId,
-  onClose,
-}: {
-  team: CrewTemplate | null;
-  tenantId: string | null;
-  onClose: () => void;
-}) {
-  const { data: seats = [], isLoading } = useCrewTemplateSeats(team?.id ?? null);
-  const { data: students = [] } = useTenantStudents(tenantId);
-  const save = useSaveCrewSeats();
-
-  const cap = team?.boat?.capacity ?? 6;
-  const [picks, setPicks] = useState<(string | null)[]>(() => Array(cap).fill(null));
-
-  useEffect(() => {
-    if (!team) return;
-    const arr: (string | null)[] = Array(cap).fill(null);
-    seats.forEach((s) => {
-      if (s.seat_position >= 1 && s.seat_position <= cap) {
-        arr[s.seat_position - 1] = s.student_id;
-      }
-    });
-    setPicks(arr);
-  }, [team, seats, cap]);
-
-  const handleSave = () => {
-    if (!team) return;
-    save.mutate(
-      {
-        templateId: team.id,
-        seats: picks.map((sid, i) => ({ seat_position: i + 1, student_id: sid })),
-      },
-      { onSuccess: () => onClose() },
-    );
-  };
-
-  if (!team) return null;
-  return (
-    <Modal
-      open={!!team}
-      onClose={onClose}
-      title={`Assentos · ${team.name}`}
-      subtitle={`OC${cap}`}
-      maxWidth={520}
-      footer={
-        <>
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3.5 py-2 rounded-[10px] text-[12px] font-semibold text-hv-text"
-            style={{
-              background: "hsl(var(--hv-bg))",
-              border: "1px solid hsl(var(--hv-line))",
-            }}
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={save.isPending}
-            className="px-3.5 py-2 rounded-[10px] text-[12px] font-bold text-white border-0"
-            style={{ background: "hsl(var(--hv-navy))" }}
-          >
-            {save.isPending ? "Salvando..." : "Salvar assentos"}
-          </button>
-        </>
-      }
-    >
-      {isLoading ? (
-        <Loader />
-      ) : (
-        <div className="space-y-2">
-          {Array.from({ length: cap }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center gap-2 rounded-[10px] p-2"
-              style={{
-                background: "hsl(var(--hv-bg))",
-                border: "1px solid hsl(var(--hv-line))",
-              }}
-            >
-              <div
-                className="w-7 h-7 rounded-[8px] grid place-items-center text-white text-[12px] font-bold shrink-0"
-                style={{ background: "hsl(var(--hv-navy))" }}
-              >
-                {i + 1}
-              </div>
-              <select
-                value={picks[i] ?? ""}
-                onChange={(e) => {
-                  const next = [...picks];
-                  next[i] = e.target.value || null;
-                  setPicks(next);
-                }}
-                className="flex-1 px-2 py-1.5 rounded-[6px] text-[12px] text-hv-text bg-white"
-                style={{ border: "1px solid hsl(var(--hv-line))" }}
-              >
-                <option value="">— vazio —</option>
-                {students.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.nickname ? `${s.nickname} (${s.full_name})` : s.full_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ))}
-          <div className="text-[11px] text-hv-text-3 px-1">
-            Templates servem de base. O coach aplica em cada turma.
-          </div>
-        </div>
-      )}
-    </Modal>
   );
 }

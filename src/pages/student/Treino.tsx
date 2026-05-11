@@ -27,9 +27,25 @@ interface LocalExerciseState {
   pace_seconds: number | null;
 }
 
+type ExerciseKind = "strength" | "cardio" | "duration";
+
+function exerciseKind(ex: TrainingExercise): ExerciseKind {
+  const t = (ex.exercise_type || "strength").toLowerCase();
+  if (
+    t === "cardio" ||
+    t === "endurance" ||
+    t === "running" ||
+    t === "swimming" ||
+    t === "cycling" ||
+    t === "row"
+  ) return "cardio";
+  if (t === "duration" || t === "mobilidade" || t === "tecnica" || t === "técnica") return "duration";
+  return "strength";
+}
+
+/** @deprecated Use exerciseKind instead */
 function isCardio(ex: TrainingExercise): boolean {
-  const t = (ex.exercise_type || "").toLowerCase();
-  return t === "cardio" || t === "endurance" || t === "running" || t === "row";
+  return exerciseKind(ex) === "cardio";
 }
 
 function formatTimer(totalSeconds: number): string {
@@ -244,7 +260,10 @@ export default function StudentTreino() {
         {exercises.map((e, i) => {
           const s = exState[e.id];
           const done = s?.completed ?? false;
-          const cardio = isCardio(e);
+          const kind = exerciseKind(e);
+
+          const kindLabel =
+            kind === "cardio" ? "Cardio" : kind === "duration" ? "Duração" : "Força";
 
           return (
             <div
@@ -272,7 +291,7 @@ export default function StudentTreino() {
                     {e.exercise_name}
                   </div>
                   <div className="hv-mono text-[11px] text-hv-text-3 mt-0.5 tracking-wide">
-                    {cardio ? "Cardio" : "Força"}
+                    {kindLabel}
                     {e.notes ? ` · ${e.notes}` : ""}
                   </div>
                 </div>
@@ -289,46 +308,66 @@ export default function StudentTreino() {
               </div>
 
               {/* Campos editáveis */}
-              <div className="mt-3 pt-3 border-t border-hv-line grid grid-cols-3 gap-2">
-                {!cardio ? (
-                  <>
-                    <NumField
-                      label="Séries"
-                      value={s?.sets ?? null}
-                      onChange={(v) => updateField(e.id, "sets", v)}
-                    />
-                    <NumField
-                      label="Reps"
-                      value={s?.reps ?? null}
-                      onChange={(v) => updateField(e.id, "reps", v)}
-                    />
-                    <NumField
-                      label="Carga (kg)"
-                      value={s?.weight_kg ?? null}
-                      onChange={(v) => updateField(e.id, "weight_kg", v)}
-                      step={0.5}
-                    />
-                  </>
-                ) : (
-                  <>
-                    <NumField
-                      label="Dist. (m)"
-                      value={s?.distance_meters ?? null}
-                      onChange={(v) => updateField(e.id, "distance_meters", v)}
-                    />
-                    <NumField
-                      label="Dur. (s)"
-                      value={s?.duration_seconds ?? null}
-                      onChange={(v) => updateField(e.id, "duration_seconds", v)}
-                    />
-                    <NumField
-                      label="Pace (s/km)"
-                      value={s?.pace_seconds ?? null}
-                      onChange={(v) => updateField(e.id, "pace_seconds", v)}
-                    />
-                  </>
-                )}
-              </div>
+              {kind === "strength" && (
+                <div className="mt-3 pt-3 border-t border-hv-line grid grid-cols-3 gap-2">
+                  <NumField
+                    label="Séries"
+                    value={s?.sets ?? null}
+                    onChange={(v) => updateField(e.id, "sets", v)}
+                  />
+                  <NumField
+                    label="Reps"
+                    value={s?.reps ?? null}
+                    onChange={(v) => updateField(e.id, "reps", v)}
+                  />
+                  <NumField
+                    label="Carga (kg)"
+                    value={s?.weight_kg ?? null}
+                    onChange={(v) => updateField(e.id, "weight_kg", v)}
+                    step={0.5}
+                  />
+                  {e.rest_seconds != null && (
+                    <div className="col-span-3">
+                      <span className="hv-mono text-[9px] text-hv-text-3 tracking-[1px]">
+                        Descanso: {e.rest_seconds}s
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {kind === "cardio" && (
+                <div className="mt-3 pt-3 border-t border-hv-line grid grid-cols-3 gap-2">
+                  <NumField
+                    label="Dist. (m)"
+                    value={s?.distance_meters ?? null}
+                    onChange={(v) => updateField(e.id, "distance_meters", v)}
+                  />
+                  <NumField
+                    label="Dur. (s)"
+                    value={s?.duration_seconds ?? null}
+                    onChange={(v) => updateField(e.id, "duration_seconds", v)}
+                  />
+                  <NumField
+                    label="Pace (s/km)"
+                    value={s?.pace_seconds ?? null}
+                    onChange={(v) => updateField(e.id, "pace_seconds", v)}
+                  />
+                </div>
+              )}
+
+              {kind === "duration" && (
+                <div className="mt-3 pt-3 border-t border-hv-line grid grid-cols-1 gap-2">
+                  <NumField
+                    label="Duração (s)"
+                    value={s?.duration_seconds ?? null}
+                    onChange={(v) => updateField(e.id, "duration_seconds", v)}
+                  />
+                  {e.notes && (
+                    <div className="text-[11px] text-hv-text-3 leading-relaxed">{e.notes}</div>
+                  )}
+                </div>
+              )}
             </div>
           );
         })}

@@ -175,7 +175,7 @@ export default function StudentResultadoTreino() {
           onClick={() => navigate("/student/evolucao")}
           className="w-full py-3.5 rounded-[14px] bg-hv-cyan text-hv-ink font-bold text-sm active:scale-[0.97] transition-transform inline-flex items-center justify-center gap-2"
         >
-          Ver minha evolução
+          Voltar aos meus treinos
           <HVIcon name="arrow-right" size={16} stroke={2.4} />
         </button>
         <button

@@ -69,6 +69,7 @@ const AdminBanners = lazy(() => import("@/pages/admin/Banners"));
 const AdminAvisos = lazy(() => import("@/pages/admin/Avisos"));
 const AdminFaturas = lazy(() => import("@/pages/admin/Faturas"));
 const AdminTreinos = lazy(() => import("@/pages/admin/Treinos"));
+const AdminTreinoDetalhe = lazy(() => import("@/pages/admin/TreinoDetalhe"));
 const AdminPerfil = lazy(() => import("@/pages/admin/Perfil"));
 const AdminUsuarios = lazy(() => import("@/pages/admin/Usuarios"));
 const AdminRelatorios = lazy(() => import("@/pages/admin/Relatorios"));
@@ -260,6 +261,7 @@ export default function App() {
                   <Route path="avisos" element={<AdminAvisos />} />
                   <Route path="faturas" element={<AdminFaturas />} />
                   <Route path="treinos" element={<AdminTreinos />} />
+                  <Route path="treino/:sessionId" element={<AdminTreinoDetalhe />} />
                   <Route path="perfil" element={<AdminPerfil />} />
                   <Route path="usuarios" element={<AdminUsuarios />} />
                   <Route path="relatorios" element={<AdminRelatorios />} />
