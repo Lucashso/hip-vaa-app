@@ -1,38 +1,29 @@
-// Plano — hero próxima cobrança + lista de faturas.
+// Plano — plano atual + próxima cobrança (PIX modal + polling) + histórico + cartões salvos.
 
+import { useState } from "react";
 import { PageScaffold } from "@/components/PageScaffold";
 import { useMyStudent, useMyInvoices, type Invoice } from "@/hooks/useStudent";
+import { useUpcomingStudentInvoice } from "@/hooks/useStudentHome";
 import { HVIcon } from "@/lib/HVIcon";
 import { cn, formatBRL } from "@/lib/utils";
+import { InvoiceAlert } from "@/components/Alerts/InvoiceAlert";
+import { PixPaymentModal } from "@/components/Student/PixPaymentModal";
+import { SavedCardsManager } from "@/components/Student/SavedCardsManager";
+import { toast } from "sonner";
 
 type Status = Invoice["status"];
 
-function statusInfo(status: Status, overdue: boolean): {
-  label: string;
-  className: string;
-} {
-  if (status === "paid") {
-    return {
-      label: "PAGO",
-      className: "bg-hv-leaf/15 text-hv-leaf",
-    };
-  }
-  if (status === "cancelled") {
-    return {
-      label: "CANCELADO",
-      className: "bg-hv-line text-hv-text-3",
-    };
-  }
-  if (overdue || status === "overdue") {
-    return {
-      label: "ATRASADO",
-      className: "bg-hv-coral/15 text-hv-coral",
-    };
-  }
-  return {
-    label: "PENDENTE",
-    className: "bg-hv-amber/20 text-hv-amber",
-  };
+function statusInfo(
+  status: Status,
+  overdue: boolean,
+): { label: string; className: string } {
+  if (status === "paid")
+    return { label: "PAGO", className: "bg-hv-leaf/15 text-hv-leaf" };
+  if (status === "cancelled")
+    return { label: "CANCELADO", className: "bg-hv-line text-hv-text-3" };
+  if (overdue || status === "overdue")
+    return { label: "ATRASADO", className: "bg-hv-coral/15 text-hv-coral" };
+  return { label: "PENDENTE", className: "bg-hv-amber/20 text-hv-amber" };
 }
 
 function formatDate(dateStr: string | null): string {
@@ -48,17 +39,70 @@ function formatDate(dateStr: string | null): string {
 export default function StudentPlano() {
   const { data: student } = useMyStudent();
   const { data: invoices = [] } = useMyInvoices(student?.id);
+  const { data: nextInvoice = null } = useUpcomingStudentInvoice(student?.id);
+  const [pixInvoice, setPixInvoice] = useState<Invoice | null>(null);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const next = invoices.find((i) => i.status === "pending" || i.status === "overdue");
-  const nextOverdue =
-    next && new Date(next.due_date) < today && next.status !== "paid";
   const planName = student?.plan?.name || "Plano";
+  const planPrice = student?.plan?.price_cents ?? 0;
+  const planType = student?.plan?.type || "monthly";
+
+  const nextOverdue =
+    nextInvoice &&
+    nextInvoice.status !== "paid" &&
+    new Date(nextInvoice.due_date) < today;
+
+  const daysUntilDue = nextInvoice
+    ? Math.floor(
+        (new Date(nextInvoice.due_date).getTime() - today.getTime()) /
+          (1000 * 60 * 60 * 24),
+      )
+    : null;
+  const daysOverdue =
+    nextOverdue && nextInvoice
+      ? Math.floor(
+          (today.getTime() - new Date(nextInvoice.due_date).getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
+      : 0;
+
+  function openPix(invoice: Invoice) {
+    setPixInvoice(invoice);
+  }
 
   return (
     <PageScaffold eyebrow="SEU EXTRATO" title="Financeiro">
+      <InvoiceAlert
+        invoice={nextInvoice}
+        daysUntilDue={daysUntilDue}
+        isOverdue={!!nextOverdue}
+        daysOverdue={daysOverdue}
+        onPayClick={() => nextInvoice && openPix(nextInvoice)}
+      />
+
+      {/* Plano atual */}
+      <div className="hv-card p-4 flex items-center gap-3">
+        <div className="w-12 h-12 rounded-[14px] bg-hv-foam grid place-items-center text-hv-navy">
+          <HVIcon name="paddle" size={22} stroke={2.2} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="hv-eyebrow">PLANO ATUAL</div>
+          <div className="font-display text-[18px] mt-0.5 truncate">{planName}</div>
+          {planPrice > 0 && (
+            <div className="text-[11px] text-hv-text-3 mt-0.5">
+              {formatBRL(planPrice)} /{" "}
+              {planType === "annual"
+                ? "ano"
+                : planType === "drop_in"
+                  ? "avulso"
+                  : "mês"}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Hero próxima cobrança */}
       <div
         className="relative overflow-hidden rounded-[22px] text-white p-5"
@@ -88,31 +132,40 @@ export default function StudentPlano() {
           <div className="hv-eyebrow text-white/70">PRÓXIMA COBRANÇA</div>
           <div className="text-sm mt-1 text-white/85">{planName}</div>
 
-          {next ? (
+          {nextInvoice ? (
             <>
               <div className="font-display font-extrabold text-[44px] leading-none mt-3 text-white">
-                {formatBRL(next.amount_cents)}
+                {formatBRL(nextInvoice.amount_cents)}
               </div>
               <div className="text-xs mt-2 text-white/70">
-                Vence em {formatDate(next.due_date)}
+                Vence em {formatDate(nextInvoice.due_date)}
                 {nextOverdue ? " · em atraso" : ""}
               </div>
               <div className="mt-5 flex gap-2.5">
                 <button
                   type="button"
+                  onClick={() => openPix(nextInvoice)}
                   className="flex-1 h-12 rounded-[14px] bg-hv-cyan text-hv-ink font-bold text-sm flex items-center justify-center gap-1.5 transition-transform active:scale-[0.97]"
                 >
-                  <HVIcon name="zap" size={16} stroke={2.2} /> Pagar agora
+                  <HVIcon name="qr" size={16} stroke={2.2} /> Pagar com PIX
                 </button>
                 <button
                   type="button"
+                  onClick={() => {
+                    const boletoUrl = (nextInvoice as unknown as { url_boleto?: string }).url_boleto;
+                    if (boletoUrl) {
+                      window.open(boletoUrl, "_blank");
+                    } else {
+                      toast.info("Boleto indisponível");
+                    }
+                  }}
                   className="h-12 px-4 rounded-[14px] text-white font-semibold text-[13px]"
                   style={{
                     background: "rgba(255,255,255,0.12)",
                     border: "1px solid rgba(255,255,255,0.18)",
                   }}
                 >
-                  Ver fatura
+                  Boleto
                 </button>
               </div>
             </>
@@ -129,9 +182,22 @@ export default function StudentPlano() {
         </div>
       </div>
 
+      {/* Cartões salvos */}
+      {student?.id && (
+        <div>
+          <h3 className="hv-eyebrow mb-2">CARTÕES SALVOS</h3>
+          <SavedCardsManager
+            studentId={student.id}
+            onAddCard={() =>
+              toast.info("Cadastro de cartão será habilitado em breve")
+            }
+          />
+        </div>
+      )}
+
       {/* Histórico de faturas */}
       <div>
-        <h3 className="hv-eyebrow mb-2">Histórico</h3>
+        <h3 className="hv-eyebrow mb-2">HISTÓRICO</h3>
         {invoices.length === 0 ? (
           <div className="hv-card p-6 text-center text-sm text-hv-text-2">
             Nenhuma fatura registrada.
@@ -144,8 +210,12 @@ export default function StudentPlano() {
                 inv.status !== "cancelled" &&
                 new Date(inv.due_date) < today;
               const info = statusInfo(inv.status, overdue);
+              const canPay = inv.status === "pending" || inv.status === "overdue";
               return (
-                <div key={inv.id} className="hv-card p-4 flex items-center gap-3">
+                <div
+                  key={inv.id}
+                  className="hv-card p-4 flex items-center gap-3"
+                >
                   <div className="w-10 h-10 rounded-[12px] bg-hv-foam grid place-items-center text-hv-navy">
                     <HVIcon name="wallet" size={18} stroke={2} />
                   </div>
@@ -171,6 +241,15 @@ export default function StudentPlano() {
                     >
                       {info.label}
                     </span>
+                    {canPay && (
+                      <button
+                        type="button"
+                        onClick={() => openPix(inv)}
+                        className="text-[11px] font-semibold text-hv-blue hover:underline"
+                      >
+                        Pagar →
+                      </button>
+                    )}
                   </div>
                 </div>
               );
@@ -178,6 +257,18 @@ export default function StudentPlano() {
           </div>
         )}
       </div>
+
+      {pixInvoice && (
+        <PixPaymentModal
+          open={!!pixInvoice}
+          onClose={() => setPixInvoice(null)}
+          amountCents={pixInvoice.amount_cents}
+          description={pixInvoice.description || planName}
+          invoiceId={pixInvoice.id}
+          initialQr={pixInvoice.pix_qr}
+          initialQrBase64={pixInvoice.pix_qr_base64}
+        />
+      )}
     </PageScaffold>
   );
 }

@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import { PageScaffold } from "@/components/PageScaffold";
 import { useAuth } from "@/hooks/useAuth";
 import { useMyStudent, useMyEnrolledClasses } from "@/hooks/useStudent";
+import { useUpcomingStudentInvoice } from "@/hooks/useStudentHome";
+import { InvoiceAlert } from "@/components/Alerts/InvoiceAlert";
 import { HVIcon } from "@/lib/HVIcon";
 import { cn } from "@/lib/utils";
 
@@ -28,6 +30,31 @@ export default function StudentAulas() {
   void _profile;
   const { data: student } = useMyStudent();
   const { data: enrolled = [] } = useMyEnrolledClasses(student?.id);
+  const { data: nextInvoice = null } = useUpcomingStudentInvoice(student?.id);
+
+  const today0 = new Date();
+  today0.setHours(0, 0, 0, 0);
+  const isOverdue =
+    !!nextInvoice &&
+    (nextInvoice.status === "overdue" ||
+      (nextInvoice.status === "pending" &&
+        new Date(nextInvoice.due_date) < today0));
+  const daysOverdue =
+    isOverdue && nextInvoice
+      ? Math.max(
+          0,
+          Math.floor(
+            (today0.getTime() - new Date(nextInvoice.due_date).getTime()) /
+              (1000 * 60 * 60 * 24),
+          ),
+        )
+      : 0;
+  const daysUntilDue = nextInvoice
+    ? Math.floor(
+        (new Date(nextInvoice.due_date).getTime() - today0.getTime()) /
+          (1000 * 60 * 60 * 24),
+      )
+    : null;
 
   const today = new Date();
   const [selectedWeekday, setSelectedWeekday] = useState<number>(today.getDay());
@@ -52,6 +79,13 @@ export default function StudentAulas() {
 
   return (
     <PageScaffold eyebrow={eyebrow} title="Suas aulas">
+      <InvoiceAlert
+        invoice={nextInvoice}
+        daysUntilDue={daysUntilDue}
+        isOverdue={isOverdue}
+        daysOverdue={daysOverdue}
+      />
+
       {/* Week pills */}
       <div className="flex gap-1.5 overflow-x-auto -mx-1 px-1 pb-1">
         {WEEK_LABELS.map((label, idx) => {

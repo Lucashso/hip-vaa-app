@@ -12,6 +12,10 @@ export interface Student {
   plan_id: string | null;
   invoice_due_day: number | null;
   is_scholarship: boolean;
+  consent_signed: boolean | null;
+  consent_signed_at: string | null;
+  consent_pdf_url: string | null;
+  health_questionnaire_answered: boolean | null;
 }
 
 export interface ClassRow {
