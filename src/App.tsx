@@ -31,9 +31,12 @@ const StudentParceiros = lazy(() => import("@/pages/student/Parceiros"));
 
 const PublicCadastroPagamento = lazy(() => import("@/pages/public/CadastroPagamento"));
 const PublicCadastroSucesso = lazy(() => import("@/pages/public/CadastroSucesso"));
+const PublicCadastroGratuito = lazy(() => import("@/pages/public/CadastroGratuito"));
 const PublicAvulso = lazy(() => import("@/pages/public/Avulso"));
 const PublicAvulsoPagamento = lazy(() => import("@/pages/public/AvulsoPagamento"));
 const PublicAvulsoSucesso = lazy(() => import("@/pages/public/AvulsoSucesso"));
+const PublicAvulsoGratuito = lazy(() => import("@/pages/public/AvulsoGratuito"));
+const PublicAvulsoAgendado = lazy(() => import("@/pages/public/AvulsoAgendado"));
 
 // Páginas que vivem em src/pages/equipe/ mas agora respondem a /admin/*.
 const AdminHome = lazy(() => import("@/pages/equipe/FilialHome"));
@@ -87,8 +90,16 @@ const ConverterStudent = lazy(() => import("@/pages/public/ConverterStudent"));
 const ConverterPagamento = lazy(() => import("@/pages/public/ConverterPagamento"));
 const ConverterSucesso = lazy(() => import("@/pages/public/ConverterSucesso"));
 const Privacidade = lazy(() => import("@/pages/public/Privacidade"));
+const ContratoAdSignup = lazy(() => import("@/pages/public/ContratoAdSignup"));
+const ContratoAdSign = lazy(() => import("@/pages/public/ContratoAdSign"));
+const ContratoAdPagamento = lazy(() => import("@/pages/public/ContratoAdPagamento"));
+const ContratoAdSucesso = lazy(() => import("@/pages/public/ContratoAdSucesso"));
 const EsqueciSenha = lazy(() => import("@/pages/EsqueciSenha"));
 const ResetarSenha = lazy(() => import("@/pages/ResetarSenha"));
+const AssinarSignup = lazy(() => import("@/pages/public/AssinarSignup"));
+const AssinarContrato = lazy(() => import("@/pages/public/AssinarContrato"));
+const AssinarPagamento = lazy(() => import("@/pages/public/AssinarPagamento"));
+const AssinarSucesso = lazy(() => import("@/pages/public/AssinarSucesso"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -159,21 +170,35 @@ export default function App() {
                 <Route path="/cadastro" element={<StudentCadastro />} />
                 <Route path="/cadastro/pagamento" element={<PublicCadastroPagamento />} />
                 <Route path="/cadastro/sucesso" element={<PublicCadastroSucesso />} />
+                <Route path="/cadastro/gratuito" element={<PublicCadastroGratuito />} />
                 <Route path="/cadastro/:tenantSlug" element={<StudentCadastro />} />
                 <Route path="/:slug/cadastro/pagamento" element={<PublicCadastroPagamento />} />
                 <Route path="/:slug/cadastro/sucesso" element={<PublicCadastroSucesso />} />
+                <Route path="/:slug/cadastro/gratuito" element={<PublicCadastroGratuito />} />
                 <Route path="/avulso" element={<PublicAvulso />} />
                 <Route path="/avulso/pagamento" element={<PublicAvulsoPagamento />} />
                 <Route path="/avulso/sucesso" element={<PublicAvulsoSucesso />} />
+                <Route path="/avulso/gratuito" element={<PublicAvulsoGratuito />} />
+                <Route path="/avulso/agendado" element={<PublicAvulsoAgendado />} />
                 <Route path="/:slug/avulso" element={<PublicAvulso />} />
                 <Route path="/:slug/avulso/pagamento" element={<PublicAvulsoPagamento />} />
                 <Route path="/:slug/avulso/sucesso" element={<PublicAvulsoSucesso />} />
+                <Route path="/:slug/avulso/gratuito" element={<PublicAvulsoGratuito />} />
+                <Route path="/:slug/avulso/agendado" element={<PublicAvulsoAgendado />} />
                 <Route path="/converter/:token" element={<ConverterStudent />} />
                 <Route path="/converter/:token/pagamento" element={<ConverterPagamento />} />
                 <Route path="/converter/:token/sucesso" element={<ConverterSucesso />} />
                 <Route path="/:slug/converter/:token" element={<ConverterStudent />} />
                 <Route path="/:slug/converter/:token/pagamento" element={<ConverterPagamento />} />
                 <Route path="/:slug/converter/:token/sucesso" element={<ConverterSucesso />} />
+                <Route path="/contrato-ad/:token/cadastro" element={<ContratoAdSignup />} />
+                <Route path="/contrato-ad/:token/contrato" element={<ContratoAdSign />} />
+                <Route path="/contrato-ad/:token/pagamento" element={<ContratoAdPagamento />} />
+                <Route path="/contrato-ad/:token/sucesso" element={<ContratoAdSucesso />} />
+                <Route path="/assinar" element={<AssinarSignup />} />
+                <Route path="/assinar/contrato" element={<AssinarContrato />} />
+                <Route path="/assinar/pagamento" element={<AssinarPagamento />} />
+                <Route path="/assinar/sucesso" element={<AssinarSucesso />} />
 
                 {/* Aluno */}
                 <Route path="/" element={<ProtectedRoute><StudentOnly><StudentHome /></StudentOnly></ProtectedRoute>} />

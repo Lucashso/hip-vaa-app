@@ -77,3 +77,30 @@ export function useGenerateSignupPix() {
     },
   });
 }
+
+export interface FreeSignupResult {
+  success: boolean;
+  user_id: string;
+  student_id: string;
+  message?: string;
+}
+
+/** Cadastro grátis (Wave 3). Cria auth user + student direto (sem PIX) via
+ * edge `create-free-signup`. Espera `plan_id` opcional do plano gratuito. */
+export function useCreateFreeSignup() {
+  return useMutation({
+    mutationFn: async (payload: PendingSignupPayload): Promise<FreeSignupResult> => {
+      const { data, error } = await supabase.functions.invoke("create-free-signup", {
+        body: payload,
+      });
+      if (error) throw new Error(error.message || "Erro ao processar cadastro");
+      if (data?.error) throw new Error(data.error);
+      if (!data?.success) throw new Error("Erro ao processar cadastro");
+      return data as FreeSignupResult;
+    },
+    onError: (err: Error) => {
+      console.error("createFreeSignup", err);
+      toast.error(err.message || "Erro no cadastro");
+    },
+  });
+}
