@@ -16,9 +16,9 @@ const SECTIONS: { title: string; items: AdminLink[] }[] = [
   {
     title: "Operação",
     items: [
-      { to: "/equipe/alunos", icon: "users", label: "Alunos", caption: "Lista, ficha, ações", color: "#1B6FB0" },
-      { to: "/equipe/time", icon: "user", label: "Equipe", caption: "Pessoas e papéis", color: "#2FB37A" },
-      { to: "/equipe/crew", icon: "boat", label: "Tripulação OC6", caption: "Crew templates", color: "#25C7E5" },
+      { to: "/admin/alunos", icon: "users", label: "Alunos", caption: "Lista, ficha, ações", color: "#1B6FB0" },
+      { to: "/admin/time", icon: "user", label: "Equipe", caption: "Pessoas e papéis", color: "#2FB37A" },
+      { to: "/admin/tripulacoes", icon: "boat", label: "Tripulação OC6", caption: "Crew templates", color: "#25C7E5" },
       { to: "/admin/equipes", icon: "users", label: "Times", caption: "Equipes/turmas", color: "#FF6B4A" },
     ],
   },
@@ -29,14 +29,14 @@ const SECTIONS: { title: string; items: AdminLink[] }[] = [
       { to: "/admin/locais", icon: "compass", label: "Locais", caption: "Venues do clube", color: "#1B6FB0" },
       { to: "/admin/canoas", icon: "boat", label: "Embarcações", caption: "Frota OC6/OC1", color: "#25C7E5" },
       { to: "/admin/produtos", icon: "shop", label: "Produtos", caption: "Loja Hip Va'a", color: "#7B2D9F" },
-      { to: "/admin/pedidos", icon: "shop", label: "Pedidos", caption: "Vendas loja", color: "#F2B544" },
-      { to: "/admin/biblioteca", icon: "dumbbell", label: "Biblioteca", caption: "Treinos & exercícios", color: "#FF6B4A" },
+      { to: "/admin/pedidos-loja", icon: "shop", label: "Pedidos", caption: "Vendas loja", color: "#F2B544" },
+      { to: "/admin/biblioteca-treinos", icon: "dumbbell", label: "Biblioteca", caption: "Treinos & exercícios", color: "#FF6B4A" },
     ],
   },
   {
     title: "Financeiro",
     items: [
-      { to: "/equipe/financeiro", icon: "wallet", label: "Cobrança", caption: "KPIs + inadimplentes", color: "#2FB37A" },
+      { to: "/admin/financeiro", icon: "wallet", label: "Cobrança", caption: "KPIs + inadimplentes", color: "#2FB37A" },
     ],
   },
   {
@@ -51,7 +51,7 @@ const SECTIONS: { title: string; items: AdminLink[] }[] = [
     title: "Pessoas & papéis",
     items: [
       { to: "/admin/usuarios", icon: "user", label: "Usuários & papéis", caption: "Permissões", color: "#1B6FB0" },
-      { to: "/admin/questionario", icon: "check", label: "Questionário saúde", caption: "Fluxo de matrícula", color: "#2FB37A" },
+      { to: "/admin/questionario-saude", icon: "check", label: "Questionário saúde", caption: "Fluxo de matrícula", color: "#2FB37A" },
     ],
   },
   {
@@ -63,7 +63,7 @@ const SECTIONS: { title: string; items: AdminLink[] }[] = [
   {
     title: "Filial",
     items: [
-      { to: "/equipe/config", icon: "settings", label: "Configurações", caption: "Identidade, regras, gateways", color: "#0E3A5F" },
+      { to: "/admin/configuracoes", icon: "settings", label: "Configurações", caption: "Identidade, regras, gateways", color: "#0E3A5F" },
       { to: "/admin/termos", icon: "credit", label: "Termos de uso", caption: "Versões", color: "#7B2D9F" },
       { to: "/admin/ajuda", icon: "share", label: "Ajuda & suporte", caption: "FAQ + WhatsApp", color: "#2FB37A" },
     ],

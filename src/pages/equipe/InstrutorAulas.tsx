@@ -128,7 +128,7 @@ export default function InstrutorAulas() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => navigate(`/equipe/chamada/${a.classId}`)}
+                    onClick={() => navigate(`/admin/chamada/${a.classId}`)}
                     className={cn(
                       "px-4 py-2.5 rounded-[12px] text-[13px] font-semibold inline-flex items-center gap-1.5 transition-colors",
                       a.status === "agora"

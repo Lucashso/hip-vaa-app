@@ -1,7 +1,7 @@
 // FilialHome — dashboard mobile do admin de filial.
 // Adaptado do HVFilialHome (equipe.jsx) — header gradient ocean + KPIs + agora na água + atalhos + aprovações.
 
-import { NavLink, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { HVIcon, type HVIconName } from "@/lib/HVIcon";
@@ -47,10 +47,10 @@ interface Shortcut {
 }
 
 const SHORTCUTS: Shortcut[] = [
-  { label: "Alunos", description: "184 ativos · 3 inativos", icon: "users", color: "#1B6FB0", to: "/equipe/alunos" },
-  { label: "Equipe", description: "8 instrutores · 2 recepção", icon: "user", color: "#2FB37A", to: "/equipe/time" },
-  { label: "Cobrança", description: "7 inadimplentes", icon: "wallet", color: "#FF6B4A", badge: 7, to: "/equipe/financeiro" },
-  { label: "Configurações", description: "Filial, gateways, regras", icon: "settings", color: "#F2B544", to: "/equipe/config" },
+  { label: "Alunos", description: "184 ativos · 3 inativos", icon: "users", color: "#1B6FB0", to: "/admin/alunos" },
+  { label: "Equipe", description: "8 instrutores · 2 recepção", icon: "user", color: "#2FB37A", to: "/admin/time" },
+  { label: "Cobrança", description: "7 inadimplentes", icon: "wallet", color: "#FF6B4A", badge: 7, to: "/admin/financeiro" },
+  { label: "Configurações", description: "Filial, gateways, regras", icon: "settings", color: "#F2B544", to: "/admin/configuracoes" },
 ];
 
 interface Aprovacao {
@@ -64,21 +64,6 @@ const APROVACOES: Aprovacao[] = [
   { title: "Trocar Aroha p/ turma 18:00", meta: "solicitado por Aroha S. · 2h", icon: "calendar", color: "#1B6FB0" },
   { title: "Cancelar matrícula · Ben C.", meta: "motivo: mudança de cidade · 5h", icon: "x", color: "#FF6B4A" },
   { title: "Ajuste de mensalidade · −20%", meta: "Cami R. · plano semestral", icon: "wallet", color: "#F2B544" },
-];
-
-interface BottomTab {
-  to: string;
-  icon: HVIconName;
-  label: string;
-  end?: boolean;
-}
-
-const BOTTOM_TABS: BottomTab[] = [
-  { to: "/equipe", icon: "home", label: "Hoje", end: true },
-  { to: "/equipe/aulas", icon: "calendar", label: "Operação" },
-  { to: "/equipe/alunos", icon: "users", label: "Alunos" },
-  { to: "/equipe/financeiro", icon: "wallet", label: "Cobrança" },
-  { to: "/admin", icon: "menu", label: "Mais" },
 ];
 
 export default function FilialHome() {
@@ -114,7 +99,7 @@ export default function FilialHome() {
             </div>
             <button
               type="button"
-              onClick={() => navigate("/equipe/papel")}
+              onClick={() => navigate("/admin/papel")}
               className="inline-flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-xs font-semibold text-white"
               style={{
                 background: "rgba(255,255,255,0.12)",
@@ -292,34 +277,7 @@ export default function FilialHome() {
         </div>
       </div>
 
-      {/* Bottom nav fixo (5 tabs equipe) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 bg-hv-surface border-t border-hv-line pb-[env(safe-area-inset-bottom)]">
-        <div className="grid grid-cols-5 max-w-md mx-auto h-16">
-          {BOTTOM_TABS.map((tab) => {
-            return (
-              <NavLink key={tab.to} to={tab.to} end={tab.end} className="relative">
-                {({ isActive }) => (
-                  <div
-                    className={cn(
-                      "h-full flex flex-col items-center justify-center gap-1 transition-colors duration-150",
-                      isActive ? "text-hv-navy" : "text-hv-text-3",
-                    )}
-                  >
-                    <span
-                      className={cn(
-                        "absolute top-0 left-1/2 -translate-x-1/2 h-[3px] w-8 rounded-b transition-all",
-                        isActive ? "bg-hv-cyan" : "bg-transparent",
-                      )}
-                    />
-                    <HVIcon name={tab.icon} size={22} stroke={isActive ? 2.2 : 1.8} />
-                    <span className="text-[10px] font-semibold">{tab.label}</span>
-                  </div>
-                )}
-              </NavLink>
-            );
-          })}
-        </div>
-      </nav>
+      {/* Bottom nav vem do AdminLayout (AdminBottomNav). */}
     </div>
   );
 }

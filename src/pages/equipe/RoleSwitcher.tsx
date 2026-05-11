@@ -16,9 +16,9 @@ interface RoleItem {
 }
 
 const ROLES: RoleItem[] = [
-  { id: "admin-filial", label: "Admin · Filial", description: "Vila Velha · gestão completa", icon: "trend", to: "/equipe" },
-  { id: "instrutor", label: "Instrutor", description: "Suas aulas + chamada", icon: "paddle", to: "/equipe/aulas" },
-  { id: "recepcao", label: "Recepção", description: "Check-ins + caixa", icon: "qr", to: "/equipe/time" },
+  { id: "admin-filial", label: "Admin · Filial", description: "Vila Velha · gestão completa", icon: "trend", to: "/admin" },
+  { id: "instrutor", label: "Instrutor", description: "Suas aulas + chamada", icon: "paddle", to: "/admin/aulas" },
+  { id: "recepcao", label: "Recepção", description: "Check-ins + caixa", icon: "qr", to: "/admin/time" },
   { id: "aluno", label: "Modo Aluno", description: "Sua experiência pessoal", icon: "user", to: "/" },
 ];
 

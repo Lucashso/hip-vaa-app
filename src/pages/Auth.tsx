@@ -20,7 +20,7 @@ export default function Auth() {
   useEffect(() => {
     if (!user || authLoading) return;
     if (isSuperAdmin) navigate("/rede");
-    else if (isStaff) navigate("/equipe");
+    else if (isStaff) navigate("/admin");
     else if (isStudent) navigate("/");
   }, [user, authLoading, isStudent, isStaff, isSuperAdmin, navigate]);
 

@@ -165,7 +165,7 @@ export default function AlunosLista() {
               <button
                 type="button"
                 key={a.id}
-                onClick={() => navigate(`/equipe/alunos/${a.id}`)}
+                onClick={() => navigate(`/admin/alunos/${a.id}`)}
                 className={cn(
                   "w-full text-left flex items-center gap-3 px-3.5 py-3 hover:bg-hv-foam/30",
                   i < arr.length - 1 && "border-b border-hv-line",

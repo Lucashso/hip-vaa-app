@@ -429,7 +429,7 @@ export default function AlunoDetalhe() {
             </div>
             <button
               type="button"
-              onClick={() => studentId && navigate(`/equipe/evolucao/${studentId}`)}
+              onClick={() => studentId && navigate(`/admin/evolucao/${studentId}`)}
               className="mt-3 hv-chip cursor-pointer !bg-hv-navy !text-white"
             >
               Abrir evolução completa
