@@ -7,6 +7,7 @@ import { Loader } from "@/components/Loader";
 import { PageLoader } from "@/components/PageLoader";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AdminLayout } from "@/components/Layout/AdminLayout";
+import { InstallBanner, UpdateBanner, PushNotificationBanner } from "@/components/PWA";
 
 import Auth from "@/pages/Auth";
 import Onboarding from "@/pages/Onboarding";
@@ -142,6 +143,9 @@ export default function App() {
       <AuthProvider>
         <ThemeProvider>
           <BrowserRouter>
+            <UpdateBanner />
+            <InstallBanner />
+            <PushNotificationBanner />
             <Suspense fallback={<PageLoader />}>
               <Routes>
                 {/* Públicas */}
