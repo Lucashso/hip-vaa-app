@@ -39,6 +39,7 @@ const EquipeAlunosLista = lazy(() => import("@/pages/equipe/AlunosLista"));
 const EquipeAlunoDetalhe = lazy(() => import("@/pages/equipe/AlunoDetalhe"));
 const EquipeFilialConfig = lazy(() => import("@/pages/equipe/FilialConfig"));
 
+const AdminIndex = lazy(() => import("@/pages/admin/Index"));
 const AdminPlanos = lazy(() => import("@/pages/admin/Planos"));
 const AdminLocais = lazy(() => import("@/pages/admin/Locais"));
 const AdminCanoas = lazy(() => import("@/pages/admin/Canoas"));
@@ -154,6 +155,7 @@ export default function App() {
               <Route path="/equipe/alunos/:id" element={<ProtectedRoute><StaffOnly><EquipeAlunoDetalhe /></StaffOnly></ProtectedRoute>} />
               <Route path="/equipe/config" element={<ProtectedRoute><StaffOnly><EquipeFilialConfig /></StaffOnly></ProtectedRoute>} />
 
+              <Route path="/admin" element={<ProtectedRoute><StaffOnly><AdminIndex /></StaffOnly></ProtectedRoute>} />
               <Route path="/admin/planos" element={<ProtectedRoute><AdminOnly><AdminPlanos /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/locais" element={<ProtectedRoute><AdminOnly><AdminLocais /></AdminOnly></ProtectedRoute>} />
               <Route path="/admin/canoas" element={<ProtectedRoute><AdminOnly><AdminCanoas /></AdminOnly></ProtectedRoute>} />

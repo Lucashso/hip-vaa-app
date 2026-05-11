@@ -47,10 +47,10 @@ interface Shortcut {
 }
 
 const SHORTCUTS: Shortcut[] = [
-  { label: "Alunos", description: "184 ativos · 3 inativos", icon: "users", color: "#1B6FB0", to: "#" },
+  { label: "Alunos", description: "184 ativos · 3 inativos", icon: "users", color: "#1B6FB0", to: "/equipe/alunos" },
   { label: "Equipe", description: "8 instrutores · 2 recepção", icon: "user", color: "#2FB37A", to: "/equipe/time" },
-  { label: "Cobrança", description: "7 inadimplentes", icon: "wallet", color: "#FF6B4A", badge: 7, to: "#" },
-  { label: "Caixa do dia", description: "R$ 1.430 · PIX/cartão", icon: "credit", color: "#F2B544", to: "#" },
+  { label: "Cobrança", description: "7 inadimplentes", icon: "wallet", color: "#FF6B4A", badge: 7, to: "/equipe/financeiro" },
+  { label: "Configurações", description: "Filial, gateways, regras", icon: "settings", color: "#F2B544", to: "/equipe/config" },
 ];
 
 interface Aprovacao {
@@ -76,9 +76,9 @@ interface BottomTab {
 const BOTTOM_TABS: BottomTab[] = [
   { to: "/equipe", icon: "home", label: "Hoje", end: true },
   { to: "/equipe/aulas", icon: "calendar", label: "Operação" },
-  { to: "/equipe/time", icon: "users", label: "Equipe" },
-  { to: "#cobranca", icon: "wallet", label: "Cobrança" },
-  { to: "#mais", icon: "menu", label: "Mais" },
+  { to: "/equipe/alunos", icon: "users", label: "Alunos" },
+  { to: "/equipe/financeiro", icon: "wallet", label: "Cobrança" },
+  { to: "/admin", icon: "menu", label: "Mais" },
 ];
 
 export default function FilialHome() {
@@ -296,19 +296,6 @@ export default function FilialHome() {
       <nav className="fixed bottom-0 left-0 right-0 z-40 bg-hv-surface border-t border-hv-line pb-[env(safe-area-inset-bottom)]">
         <div className="grid grid-cols-5 max-w-md mx-auto h-16">
           {BOTTOM_TABS.map((tab) => {
-            const isHash = tab.to.startsWith("#");
-            if (isHash) {
-              return (
-                <button
-                  key={tab.to}
-                  type="button"
-                  className="relative h-full flex flex-col items-center justify-center gap-1 text-hv-text-3"
-                >
-                  <HVIcon name={tab.icon} size={22} stroke={1.8} />
-                  <span className="text-[10px] font-semibold">{tab.label}</span>
-                </button>
-              );
-            }
             return (
               <NavLink key={tab.to} to={tab.to} end={tab.end} className="relative">
                 {({ isActive }) => (
