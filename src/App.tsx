@@ -7,6 +7,7 @@ import { Loader } from "@/components/Loader";
 import { PageLoader } from "@/components/PageLoader";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AdminLayout } from "@/components/Layout/AdminLayout";
+import { SuperAdminLayout } from "@/components/Layout/SuperAdminLayout";
 import { InstallBanner, UpdateBanner, PushNotificationBanner } from "@/components/PWA";
 
 import Auth from "@/pages/Auth";
@@ -292,18 +293,29 @@ export default function App() {
                 <Route path="/admin/biblioteca" element={<Navigate to="/admin/biblioteca-treinos" replace />} />
                 <Route path="/admin/questionario" element={<Navigate to="/admin/questionario-saude" replace />} />
 
-                {/* Super admin */}
-                <Route path="/rede" element={<ProtectedRoute><SuperOnly><SuperFiliais /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/filial/:id" element={<ProtectedRoute><SuperOnly><SuperTenantDetalhe /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/financeiro" element={<ProtectedRoute><SuperOnly><SuperFinanceiro /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/contratos" element={<ProtectedRoute><SuperOnly><SuperContratos /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/planos" element={<ProtectedRoute><SuperOnly><SuperPlanosPlataforma /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/analytics" element={<ProtectedRoute><SuperOnly><SuperAnalytics /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/banners" element={<ProtectedRoute><SuperOnly><SuperBannersGlobais /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/parceiros" element={<ProtectedRoute><SuperOnly><SuperParceirosGlobais /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/config" element={<ProtectedRoute><SuperOnly><SuperConfig /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/push" element={<ProtectedRoute><SuperOnly><SuperPushStats /></SuperOnly></ProtectedRoute>} />
-                <Route path="/rede/criar-filial" element={<ProtectedRoute><SuperOnly><SuperCriarTenant /></SuperOnly></ProtectedRoute>} />
+                {/* Super admin — nested Outlet pattern */}
+                <Route
+                  path="/rede"
+                  element={
+                    <ProtectedRoute>
+                      <SuperOnly>
+                        <SuperAdminLayout />
+                      </SuperOnly>
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<SuperFiliais />} />
+                  <Route path="filial/:id" element={<SuperTenantDetalhe />} />
+                  <Route path="financeiro" element={<SuperFinanceiro />} />
+                  <Route path="contratos" element={<SuperContratos />} />
+                  <Route path="planos" element={<SuperPlanosPlataforma />} />
+                  <Route path="analytics" element={<SuperAnalytics />} />
+                  <Route path="banners" element={<SuperBannersGlobais />} />
+                  <Route path="parceiros" element={<SuperParceirosGlobais />} />
+                  <Route path="config" element={<SuperConfig />} />
+                  <Route path="push" element={<SuperPushStats />} />
+                  <Route path="criar-filial" element={<SuperCriarTenant />} />
+                </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
               </Routes>

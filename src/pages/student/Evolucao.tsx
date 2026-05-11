@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useMyStudent } from "@/hooks/useStudent";
 import { useMyAssessments } from "@/hooks/useMyAssessments";
 import { useTrainingSessions } from "@/hooks/useTrainingSessions";
+import { useStravaConnection, useStravaConnect, useStravaDisconnect } from "@/hooks/useStrava";
 import { supabase } from "@/lib/supabase";
 import { useQuery } from "@tanstack/react-query";
 
@@ -96,6 +97,9 @@ export default function StudentEvolucao() {
   const { data: stats } = useLast90DaysCheckins(student?.id);
   const { data: assessments = [] } = useMyAssessments(student?.id);
   const { data: sessions = [] } = useTrainingSessions(student?.id);
+  const { data: stravaConn } = useStravaConnection(profile?.id);
+  const stravaConnect = useStravaConnect();
+  const stravaDisconnect = useStravaDisconnect();
 
   // chart points
   const chartPoints = useMemo(() => {
@@ -160,16 +164,63 @@ export default function StudentEvolucao() {
     <PageScaffold
       eyebrow={`${firstName} · ÚLTIMOS 90 DIAS`}
       title="Minha Evolução"
-      trailing={
+    >
+      {/* Card Strava */}
+      {stravaConn ? (
+        <div
+          className="hv-card p-3.5 flex items-center gap-3"
+          style={{ borderLeft: "3px solid hsl(var(--hv-coral))" }}
+        >
+          <div
+            className="w-9 h-9 rounded-[10px] grid place-items-center shrink-0"
+            style={{ background: "hsl(var(--hv-coral) / 0.12)" }}
+          >
+            <HVIcon name="zap" size={18} color="hsl(var(--hv-coral))" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-[13px]">Strava conectado</div>
+            <div className="text-[11px] text-hv-text-3 truncate">
+              {stravaConn.athlete_name || "Atleta"}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => profile?.id && stravaDisconnect.mutate(profile.id)}
+            disabled={stravaDisconnect.isPending}
+            className="px-3 py-1.5 rounded-[8px] text-[11px] font-semibold border-0"
+            style={{
+              background: "hsl(var(--hv-coral) / 0.12)",
+              color: "hsl(var(--hv-coral))",
+              opacity: stravaDisconnect.isPending ? 0.6 : 1,
+            }}
+          >
+            {stravaDisconnect.isPending ? "Aguarde…" : "Desconectar"}
+          </button>
+        </div>
+      ) : (
         <button
           type="button"
-          className="px-3 py-2 rounded-[10px] border border-hv-line bg-hv-surface text-[12px] font-semibold flex gap-1.5 items-center text-hv-coral"
+          onClick={() => stravaConnect.mutate()}
+          disabled={stravaConnect.isPending}
+          className="w-full hv-card p-3.5 flex items-center gap-3 border-0 text-left"
+          style={{ cursor: "pointer", opacity: stravaConnect.isPending ? 0.7 : 1 }}
         >
-          <HVIcon name="zap" size={14} color="hsl(var(--hv-coral))" />
-          Strava
+          <div
+            className="w-9 h-9 rounded-[10px] grid place-items-center shrink-0"
+            style={{ background: "hsl(var(--hv-coral) / 0.12)" }}
+          >
+            <HVIcon name="zap" size={18} color="hsl(var(--hv-coral))" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-[13px]">Conectar Strava</div>
+            <div className="text-[11px] text-hv-text-3">
+              Sincronize seus treinos e atividades externas
+            </div>
+          </div>
+          <HVIcon name="chevron-right" size={16} color="hsl(var(--hv-text-3))" />
         </button>
-      }
-    >
+      )}
+
       {/* Gráfico frequência */}
       <div className="hv-card px-3.5 pt-3.5 pb-2">
         <div className="flex items-center justify-between">

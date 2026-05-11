@@ -1,7 +1,7 @@
 // SuperAdmin · Detalhe de uma filial — fiel ao super-extras2.jsx HVSuperTenantDetalhe.
 
 import { useParams } from "react-router-dom";
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import { Loader } from "@/components/Loader";
 import { useSuperTenantDetalhe } from "@/hooks/useSuper";
@@ -22,13 +22,13 @@ export default function SuperTenantDetalhe() {
 
   if (!data) {
     return (
-      <SuperShell active="Filiais" sub="FILIAL · DETALHE" title="Filial não encontrada">
+      <SuperPageHeader sub="FILIAL · DETALHE" title="Filial não encontrada">
         <div className="hv-card" style={{ padding: 24 }}>
           <p style={{ fontSize: 13, color: "hsl(var(--hv-text-2))" }}>
             Não foi possível localizar essa filial.
           </p>
         </div>
-      </SuperShell>
+      </SuperPageHeader>
     );
   }
 
@@ -58,8 +58,7 @@ export default function SuperTenantDetalhe() {
   ];
 
   return (
-    <SuperShell
-      active="Filiais"
+    <SuperPageHeader
       sub="FILIAL · DETALHE"
       title={`Hip Va'a · ${data.name}`}
       action={
@@ -304,6 +303,6 @@ export default function SuperTenantDetalhe() {
           )}
         </div>
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

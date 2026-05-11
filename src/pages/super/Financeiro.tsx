@@ -1,6 +1,6 @@
 // SuperAdmin · Financeiro da plataforma — fiel ao super-extras.jsx HVSuperFinanceiro.
 
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import { Loader } from "@/components/Loader";
 import { useSuperFinanceiro } from "@/hooks/useSuper";
@@ -52,8 +52,7 @@ export default function SuperFinanceiro() {
   );
 
   return (
-    <SuperShell
-      active="Financeiro"
+    <SuperPageHeader
       sub="FINANCEIRO DA PLATAFORMA"
       title={`Receita SaaS · ${monthLabel}`}
       action={
@@ -355,6 +354,6 @@ export default function SuperFinanceiro() {
           </table>
         )}
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

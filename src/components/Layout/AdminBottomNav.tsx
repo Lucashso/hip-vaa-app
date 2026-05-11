@@ -1,21 +1,36 @@
 // AdminBottomNav — bottom nav mobile (md:hidden) das rotas /admin/*.
 // 5 itens: Hoje / Alunos / Coach (ou Aulas) / Comunidade / Mais.
-// Espelhado do lemehubapp-main BottomNav (type=admin), paleta oceanic hipvaa.
+// Badges funcionais: Comunidade usa useNewCommunityPosts, Mais usa useAdminNotifications.
 
 import { NavLink } from "react-router-dom";
 import { HVIcon, type HVIconName } from "@/lib/HVIcon";
 import { cn } from "@/lib/utils";
 import { usePermissions } from "@/hooks/usePermissions";
+import { useNewCommunityPosts } from "@/hooks/useCommunity";
+import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
 
 interface NavItem {
   to: string;
   icon: HVIconName;
   label: string;
   end?: boolean;
+  badge?: number;
 }
 
 export function AdminBottomNav() {
   const perm = usePermissions();
+  const { profile } = useAuth();
+  const { data: tenant } = useTenant();
+  const tenantId = tenant?.id ?? profile?.tenant_id ?? null;
+
+  const { count: newPosts } = useNewCommunityPosts(tenantId ?? undefined);
+  const { byType } = useAdminNotifications(tenantId);
+  const overdueBadge = byType.overdue_invoices;
+
+  // "Mais" badge: soma de outras notificações (pedidos pendentes, drop-ins, etc.)
+  const maisBadge = byType.pending_orders + byType.pending_dropins + byType.pending_tours + overdueBadge;
 
   // Se admin pode acessar Coach, usa Coach. Senão cai pra Aulas (chamada/lista).
   const coachItem: NavItem = perm.canAccessCoach
@@ -26,8 +41,8 @@ export function AdminBottomNav() {
     { to: "/admin", icon: "home", label: "Hoje", end: true },
     { to: "/admin/alunos", icon: "users", label: "Alunos" },
     coachItem,
-    { to: "/admin/comunidade", icon: "users", label: "Comunidade" },
-    { to: "/admin/mais", icon: "menu", label: "Mais" },
+    { to: "/admin/comunidade", icon: "users", label: "Comunidade", badge: newPosts },
+    { to: "/admin/mais", icon: "menu", label: "Mais", badge: maisBadge },
   ];
 
   return (
@@ -53,7 +68,17 @@ export function AdminBottomNav() {
                     isActive ? "bg-hv-cyan" : "bg-transparent",
                   )}
                 />
-                <HVIcon name={tab.icon} size={22} stroke={isActive ? 2.2 : 1.8} />
+                <div className="relative">
+                  <HVIcon name={tab.icon} size={22} stroke={isActive ? 2.2 : 1.8} />
+                  {tab.badge != null && tab.badge > 0 && (
+                    <span
+                      className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] rounded-full text-white text-[9px] font-extrabold flex items-center justify-center px-0.5"
+                      style={{ background: "hsl(var(--hv-coral))", lineHeight: 1 }}
+                    >
+                      {tab.badge > 99 ? "99+" : tab.badge}
+                    </span>
+                  )}
+                </div>
                 <span className="text-[10px] font-semibold">{tab.label}</span>
               </div>
             )}

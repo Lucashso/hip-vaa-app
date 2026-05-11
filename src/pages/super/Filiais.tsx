@@ -1,6 +1,7 @@
 // SuperAdmin · Filiais — fiel ao Hip.zip super.jsx HVSuperFiliais.
 // Cards de filial com hero gradient + comparativo de royalty + matriz autonomia.
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/lib/supabase";
@@ -9,6 +10,9 @@ import { Button } from "@/components/Button";
 import { Loader } from "@/components/Loader";
 import { cn, formatBRL } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
+import { usePendingTenantSignups } from "@/hooks/usePendingTenantSignups";
+import { PendingSignupCard } from "@/components/SuperAdmin/PendingSignupCard";
+import { SignupLinkDialog } from "@/components/SuperAdmin/SignupLinkDialog";
 
 interface TenantRow {
   id: string;
@@ -79,6 +83,8 @@ export default function SuperFiliais() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
   const { data: filiais = [], isLoading } = useFiliais();
+  const { data: pendingSignups = [] } = usePendingTenantSignups("pending");
+  const [showSignupLinkDialog, setShowSignupLinkDialog] = useState(false);
 
   if (isLoading) return <Loader />;
 
@@ -102,7 +108,10 @@ export default function SuperFiliais() {
               Modelo franquia · {filiais.length} unidades · cada filial com regras próprias
             </div>
           </div>
-          <Button size="sm" onClick={() => navigate("/rede/nova")}>
+          <Button size="sm" variant="ghost" onClick={() => setShowSignupLinkDialog(true)}>
+            <HVIcon name="copy" size={14} stroke={2} /> Gerar link
+          </Button>
+          <Button size="sm" onClick={() => navigate("/rede/criar-filial")}>
             <HVIcon name="plus" size={14} stroke={2.4} /> Nova filial
           </Button>
           <Button size="sm" variant="ghost" onClick={() => signOut()}>
@@ -112,6 +121,26 @@ export default function SuperFiliais() {
       </header>
 
       <main className="px-4 lg:px-7 py-5 lg:py-8 space-y-5 lg:space-y-7">
+        {/* Pré-cadastros pendentes */}
+        {pendingSignups.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="font-display font-bold text-[16px]">Pré-cadastros pendentes</h2>
+              <span
+                className="w-5 h-5 rounded-full grid place-items-center text-[10px] font-extrabold text-white"
+                style={{ background: "hsl(var(--hv-coral))" }}
+              >
+                {pendingSignups.length}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {pendingSignups.map((s) => (
+                <PendingSignupCard key={s.id} signup={s} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Cards de filiais */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filiais.length === 0 ? (
@@ -356,6 +385,11 @@ export default function SuperFiliais() {
           </div>
         </div>
       </main>
+
+      <SignupLinkDialog
+        open={showSignupLinkDialog}
+        onClose={() => setShowSignupLinkDialog(false)}
+      />
     </div>
   );
 }

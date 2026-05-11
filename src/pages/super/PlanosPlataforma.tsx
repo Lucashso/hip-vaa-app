@@ -1,6 +1,6 @@
 // SuperAdmin · Planos da plataforma — fiel ao super-extras2.jsx HVSuperPlanosPlataforma.
 
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import { Loader } from "@/components/Loader";
 import { useSuperPlanosPlataforma, type SuperPlatformPlan } from "@/hooks/useSuper";
@@ -39,8 +39,7 @@ export default function SuperPlanosPlataforma() {
   const popularIdx = plans.length >= 3 ? 1 : -1;
 
   return (
-    <SuperShell
-      active="Planos SaaS"
+    <SuperPageHeader
       sub="PLANOS DA PLATAFORMA"
       title="Planos de assinatura"
       action={
@@ -272,6 +271,6 @@ export default function SuperPlanosPlataforma() {
           </tbody>
         </table>
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

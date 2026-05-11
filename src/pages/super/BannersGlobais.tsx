@@ -1,6 +1,6 @@
 // SuperAdmin · Banners globais — fiel ao super-extras2.jsx HVSuperBannersGlobais.
 
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import { Loader } from "@/components/Loader";
 import { useSuperBanners, type SuperBanner } from "@/hooks/useSuper";
@@ -26,8 +26,7 @@ export default function SuperBannersGlobais() {
   const banners = data || [];
 
   return (
-    <SuperShell
-      active="Banners globais"
+    <SuperPageHeader
       sub="EXIBIDO EM TODOS OS APPS"
       title="Banners globais"
       action={
@@ -168,6 +167,6 @@ export default function SuperBannersGlobais() {
           })}
         </div>
       )}
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

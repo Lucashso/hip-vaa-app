@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useUpdateTenant } from "@/hooks/useAlunos";
 import { cn } from "@/lib/utils";
+import { NfseConfigTab } from "@/components/Admin/NfseConfigTab";
 
 interface ToggleSetting {
   key: string;
@@ -23,11 +24,14 @@ const TOGGLE_KEYS: ToggleSetting[] = [
 
 const PALETTE_DEFAULT = ["#0E3A5F", "#1B6FB0", "#25C7E5"];
 
+type ConfigTab = "geral" | "nfse";
+
 export default function FilialConfig() {
   const { profile } = useAuth();
   const { data: tenant } = useTenant();
   const tenantId = profile?.tenant_id;
   const update = useUpdateTenant(tenantId);
+  const [activeTab, setActiveTab] = useState<ConfigTab>("geral");
 
   // Lê toggles do settings_json, com fallback default
   const settings = (tenant?.settings_json ?? {}) as Record<string, unknown>;
@@ -74,6 +78,31 @@ export default function FilialConfig() {
       back
       showTabBar={false}
     >
+      {/* Tabs */}
+      <div className="flex gap-4 pb-2 border-b border-hv-line mb-3">
+        {(["geral", "nfse"] as ConfigTab[]).map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setActiveTab(t)}
+            className={cn(
+              "py-1.5 text-[13px] bg-transparent border-0",
+              activeTab === t ? "font-bold text-hv-navy" : "font-medium text-hv-text-3",
+            )}
+            style={{
+              borderBottom: activeTab === t ? "2px solid hsl(var(--hv-navy))" : "2px solid transparent",
+            }}
+          >
+            {t === "geral" ? "Geral" : "NFs-e"}
+          </button>
+        ))}
+      </div>
+
+      {/* NFs-e Tab */}
+      {activeTab === "nfse" && <NfseConfigTab tenantId={tenantId} />}
+
+      {/* Geral Tab */}
+      {activeTab === "geral" && <>
       {/* identidade */}
       <h3 className="hv-eyebrow !text-hv-text-2 !text-[12px] !tracking-[0.14em]">
         Identidade da filial
@@ -280,6 +309,7 @@ export default function FilialConfig() {
           </button>
         </div>
       </div>
+      </>}
     </PageScaffold>
   );
 }

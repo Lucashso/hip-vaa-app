@@ -2,7 +2,7 @@
 // Métricas são placeholders/derivadas pois não há tabela de eventos agregados ainda.
 
 import { Fragment } from "react";
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { Loader } from "@/components/Loader";
 import { useSuperTenants } from "@/hooks/useSuper";
 
@@ -29,8 +29,7 @@ export default function SuperAnalytics() {
   const dayBars = [28, 42, 38, 48, 56, 78, 62];
 
   return (
-    <SuperShell
-      active="Analytics"
+    <SuperPageHeader
       sub="MÉTRICAS DA REDE"
       title="Analytics consolidado"
       action={
@@ -241,6 +240,6 @@ export default function SuperAnalytics() {
           ))}
         </div>
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

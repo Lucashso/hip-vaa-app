@@ -1,6 +1,6 @@
 // SuperAdmin · Contratos de serviço — fiel ao super-extras.jsx HVSuperContratos.
 
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import { Loader } from "@/components/Loader";
 import { useSuperContratos } from "@/hooks/useSuper";
@@ -52,8 +52,7 @@ export default function SuperContratos() {
   const pendingSignature = rows.find((r) => (r.status || "").toLowerCase() === "pending");
 
   return (
-    <SuperShell
-      active="Contratos"
+    <SuperPageHeader
       sub="CONTRATOS DE SERVIÇO"
       title="Franquias & licenças"
       action={
@@ -344,6 +343,6 @@ export default function SuperContratos() {
           ))}
         </div>
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

@@ -1,7 +1,7 @@
 // SuperAdmin · Configurações da plataforma — fiel ao super-extras2.jsx HVSuperConfig.
 
 import { useState } from "react";
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon, type HVIconName } from "@/lib/HVIcon";
 
 const SECTIONS: { l: string; ic: HVIconName }[] = [
@@ -39,7 +39,7 @@ export default function SuperConfig() {
   const [active, setActive] = useState("Gateways");
 
   return (
-    <SuperShell active="Configurações" sub="PLATAFORMA" title="Configurações da plataforma">
+    <SuperPageHeader sub="PLATAFORMA" title="Configurações da plataforma">
       <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: 18 }}>
         {/* Sidebar interno */}
         <div className="hv-card" style={{ padding: 8, alignSelf: "start" }}>
@@ -267,6 +267,6 @@ export default function SuperConfig() {
           </div>
         </div>
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

@@ -1,6 +1,6 @@
 // SuperAdmin · Push stats — fiel ao super-extras2.jsx HVSuperPushStats.
 
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { Loader } from "@/components/Loader";
 import { useSuperPushStats } from "@/hooks/useSuper";
 
@@ -38,8 +38,7 @@ export default function SuperPushStats() {
   const maxDaily = Math.max(1, ...data.daily_sends.map((d) => d.count));
 
   return (
-    <SuperShell
-      active="Push"
+    <SuperPageHeader
       sub="NOTIFICAÇÕES"
       title="Push notifications"
       action={
@@ -221,6 +220,6 @@ export default function SuperPushStats() {
           </table>
         )}
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

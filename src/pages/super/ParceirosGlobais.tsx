@@ -1,6 +1,6 @@
 // SuperAdmin · Parceiros globais — fiel ao super-extras2.jsx HVSuperParceirosGlobais.
 
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import { Loader } from "@/components/Loader";
 import { useSuperParceiros } from "@/hooks/useSuper";
@@ -14,8 +14,7 @@ export default function SuperParceirosGlobais() {
   const partners = data || [];
 
   return (
-    <SuperShell
-      active="Parceiros"
+    <SuperPageHeader
       sub="DISPONÍVEIS PARA TODAS AS FILIAIS"
       title="Parceiros globais"
       action={
@@ -148,6 +147,6 @@ export default function SuperParceirosGlobais() {
           })}
         </div>
       )}
-    </SuperShell>
+    </SuperPageHeader>
   );
 }

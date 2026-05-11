@@ -4,7 +4,7 @@
 import { Fragment, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { SuperShell } from "@/components/SuperShell";
+import { SuperPageHeader } from "@/components/SuperPageHeader";
 import { HVIcon } from "@/lib/HVIcon";
 import {
   useCheckSlugAvailable,
@@ -193,7 +193,7 @@ export default function SuperCriarTenant() {
   const submitting = createMut.isPending;
 
   return (
-    <SuperShell active="Filiais" sub="CRIAR NOVA FILIAL" title="Wizard de nova franquia">
+    <SuperPageHeader sub="CRIAR NOVA FILIAL" title="Wizard de nova franquia">
       {/* Stepper */}
       <div style={{ display: "flex", gap: 12, marginBottom: 22 }}>
         {STEPS.map((s, i) => {
@@ -759,6 +759,6 @@ export default function SuperCriarTenant() {
           </div>
         </div>
       </div>
-    </SuperShell>
+    </SuperPageHeader>
   );
 }
