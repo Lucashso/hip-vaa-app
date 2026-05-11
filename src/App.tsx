@@ -47,9 +47,15 @@ const AdminInstrutorChamada = lazy(() => import("@/pages/equipe/InstrutorChamada
 const AdminInstrutorEvolucao = lazy(() => import("@/pages/equipe/InstrutorEvolucao"));
 const AdminCoachCrew = lazy(() => import("@/pages/equipe/CoachCrew"));
 const AdminFilialFinanceiro = lazy(() => import("@/pages/equipe/FilialFinanceiro"));
-const AdminAlunosLista = lazy(() => import("@/pages/equipe/AlunosLista"));
-const AdminAlunoDetalhe = lazy(() => import("@/pages/equipe/AlunoDetalhe"));
 const AdminFilialConfig = lazy(() => import("@/pages/equipe/FilialConfig"));
+
+// Páginas admin recém-criadas (Wave 4).
+const AdminAulas = lazy(() => import("@/pages/admin/Aulas"));
+const AdminAulaDetalhe = lazy(() => import("@/pages/admin/AulaDetalhe"));
+const AdminAlunos = lazy(() => import("@/pages/admin/Alunos"));
+const AdminStudentDetails = lazy(() => import("@/pages/admin/StudentDetails"));
+const AdminDropInStudentDetails = lazy(() => import("@/pages/admin/DropInStudentDetails"));
+const AdminPartnerStudentDetails = lazy(() => import("@/pages/admin/PartnerStudentDetails"));
 
 // Páginas que vivem em src/pages/admin/.
 const AdminIndex = lazy(() => import("@/pages/admin/Index"));
@@ -232,13 +238,16 @@ export default function App() {
                   <Route path="dashboard" element={<AdminDashboard />} />
                   <Route path="papel" element={<AdminRoleSwitcher />} />
                   <Route path="time" element={<AdminFilialEquipe />} />
-                  <Route path="aulas" element={<AdminInstrutorAulas />} />
+                  <Route path="aulas" element={<AdminAulas />} />
+                  <Route path="aulas/:id" element={<AdminAulaDetalhe />} />
                   <Route path="coach" element={<AdminInstrutorAulas />} />
                   <Route path="chamada/:classId" element={<AdminInstrutorChamada />} />
                   <Route path="evolucao/:studentId" element={<AdminInstrutorEvolucao />} />
                   <Route path="tripulacoes" element={<AdminCoachCrew />} />
-                  <Route path="alunos" element={<AdminAlunosLista />} />
-                  <Route path="alunos/:id" element={<AdminAlunoDetalhe />} />
+                  <Route path="alunos" element={<AdminAlunos />} />
+                  <Route path="alunos/:id" element={<AdminStudentDetails />} />
+                  <Route path="avulso/:id" element={<AdminDropInStudentDetails />} />
+                  <Route path="parceiro/:id" element={<AdminPartnerStudentDetails />} />
                   <Route path="financeiro" element={<AdminFilialFinanceiro />} />
                   <Route path="configuracoes" element={<AdminFilialConfig />} />
                   <Route path="mais" element={<AdminIndex />} />

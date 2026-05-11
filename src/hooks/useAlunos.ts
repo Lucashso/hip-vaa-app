@@ -2,6 +2,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
 
 export interface AlunoListItem {
   id: string;
@@ -484,5 +485,399 @@ export function useUpdateTenant(tenantId: string | undefined | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["tenant", tenantId] });
     },
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CRUD alunos (mensalistas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CreateStudentInput {
+  tenant_id: string;
+  email: string;
+  password: string;
+  full_name: string;
+  nickname?: string | null;
+  cpf: string;
+  birthdate: string; // YYYY-MM-DD
+  phone: string;
+  address: string;
+  postal_code?: string | null;
+  address_number?: string | null;
+  emergency_contact_name: string;
+  emergency_contact_phone: string;
+  blood_type?: string;
+  can_swim?: boolean;
+  medical_notes?: string | null;
+  consent_signed?: boolean;
+  plan_id?: string | null;
+  is_scholarship?: boolean;
+  billing_start_date?: string | null;
+}
+
+/** Cria aluno (mensalista) via edge function admin-create-student. */
+export function useCreateStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: CreateStudentInput) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+      const response = await supabase.functions.invoke("admin-create-student", {
+        body: {
+          email: input.email,
+          password: input.password,
+          full_name: input.full_name,
+          nickname: input.nickname || undefined,
+          cpf: input.cpf.replace(/\D/g, ""),
+          birthdate: input.birthdate,
+          phone: input.phone,
+          address: input.address,
+          postal_code: input.postal_code || undefined,
+          address_number: input.address_number || undefined,
+          emergency_contact_name: input.emergency_contact_name,
+          emergency_contact_phone: input.emergency_contact_phone,
+          blood_type: input.blood_type || "unknown",
+          can_swim: input.can_swim ?? true,
+          medical_notes: input.medical_notes || undefined,
+          consent_signed: input.consent_signed ?? true,
+          plan_id: input.plan_id || undefined,
+          tenant_id: input.tenant_id,
+          is_scholarship: input.is_scholarship ?? false,
+          billing_start_date: input.billing_start_date || undefined,
+        },
+      });
+      if (response.error) throw new Error(response.error.message || "Erro ao criar aluno");
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data as { success: boolean; userId: string; studentId: string };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alunos"] });
+      toast.success("Aluno criado!");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao criar aluno"),
+  });
+}
+
+export interface UpdateStudentInput {
+  status?: "active" | "delinquent" | "inactive" | "pending";
+  plan_id?: string | null;
+  is_scholarship?: boolean;
+  medical_notes?: string | null;
+  invoice_due_day?: number | null;
+  billing_start_date?: string | null;
+}
+
+/** Update direto em students. */
+export function useUpdateStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, patch }: { id: string; patch: UpdateStudentInput }) => {
+      const { data, error } = await supabase
+        .from("students")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["alunos"] });
+      qc.invalidateQueries({ queryKey: ["aluno-detalhe", vars.id] });
+      toast.success("Aluno atualizado");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao atualizar aluno"),
+  });
+}
+
+/** Deleta aluno (cancela matrícula) via edge admin-delete-student. */
+export function useDeleteStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (studentId: string) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Não autenticado");
+      const response = await supabase.functions.invoke("admin-delete-student", {
+        body: { student_id: studentId },
+      });
+      if (response.error) throw new Error(response.error.message || "Erro ao excluir aluno");
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data as { success: boolean };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["alunos"] });
+      toast.success("Matrícula cancelada");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao cancelar matrícula"),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enrollments (matrículas em turmas)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface StudentEnrollment {
+  id: string;
+  student_id: string;
+  class_id: string;
+  active: boolean;
+  created_at: string;
+  class: {
+    id: string;
+    weekday: number;
+    start_time: string;
+    end_time: string;
+    venue: { id: string; name: string } | null;
+  } | null;
+}
+
+/** Lista de enrollments de um aluno. */
+export function useStudentEnrollments(studentId: string | undefined | null) {
+  return useQuery({
+    queryKey: ["student-enrollments", studentId],
+    queryFn: async (): Promise<StudentEnrollment[]> => {
+      if (!studentId) return [];
+      const { data, error } = await supabase
+        .from("enrollments")
+        .select(
+          "id, student_id, class_id, active, created_at, " +
+            "class:classes(id, weekday, start_time, end_time, venue:venues(id, name))",
+        )
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+
+      type Row = Omit<StudentEnrollment, "class"> & {
+        class: StudentEnrollment["class"] | StudentEnrollment["class"][] | null;
+      };
+      return ((data ?? []) as unknown as Row[]).map((r) => {
+        const cls = Array.isArray(r.class) ? r.class[0] ?? null : r.class;
+        if (!cls) return { ...r, class: null };
+        const v = cls.venue;
+        const venue = Array.isArray(v) ? v[0] ?? null : v;
+        return {
+          ...r,
+          class: {
+            id: cls.id,
+            weekday: cls.weekday,
+            start_time: cls.start_time,
+            end_time: cls.end_time,
+            venue: venue ? { id: venue.id, name: venue.name } : null,
+          },
+        };
+      });
+    },
+    enabled: !!studentId,
+  });
+}
+
+/** Matricula aluno numa turma. */
+export function useEnrollStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ studentId, classId }: { studentId: string; classId: string }) => {
+      // Se já existe enrollment inativo, reativa em vez de criar duplicado.
+      const { data: existing } = await supabase
+        .from("enrollments")
+        .select("id, active")
+        .eq("student_id", studentId)
+        .eq("class_id", classId)
+        .maybeSingle();
+      if (existing) {
+        const { error } = await supabase
+          .from("enrollments")
+          .update({ active: true })
+          .eq("id", existing.id);
+        if (error) throw error;
+        return { id: existing.id, reactivated: true };
+      }
+      const { data, error } = await supabase
+        .from("enrollments")
+        .insert({ student_id: studentId, class_id: classId, active: true })
+        .select("id")
+        .single();
+      if (error) throw error;
+      return { id: data.id, reactivated: false };
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["student-enrollments", vars.studentId] });
+      qc.invalidateQueries({ queryKey: ["aluno-detalhe", vars.studentId] });
+      toast.success("Aluno matriculado na turma!");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao matricular"),
+  });
+}
+
+/** Desativa um enrollment. */
+export function useUnenrollStudent() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (enrollmentId: string) => {
+      const { error } = await supabase
+        .from("enrollments")
+        .update({ active: false })
+        .eq("id", enrollmentId);
+      if (error) throw error;
+      return { id: enrollmentId };
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student-enrollments"] });
+      qc.invalidateQueries({ queryKey: ["aluno-detalhe"] });
+      toast.success("Matrícula removida");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao remover matrícula"),
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Documentos & faturas do aluno
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface StudentDocument {
+  id: string;
+  student_id: string;
+  tenant_id: string;
+  document_type: string;
+  document_type_label: string | null;
+  file_url: string;
+  file_name: string;
+  issue_date: string | null;
+  expiration_date: string | null;
+  reminder_days: number | null;
+  notes: string | null;
+  uploaded_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export function useStudentDocuments(studentId: string | undefined | null) {
+  return useQuery({
+    queryKey: ["student-documents", studentId],
+    queryFn: async (): Promise<StudentDocument[]> => {
+      if (!studentId) return [];
+      const { data, error } = await supabase
+        .from("student_documents")
+        .select(
+          "id, student_id, tenant_id, document_type, document_type_label, file_url, file_name, issue_date, expiration_date, reminder_days, notes, uploaded_by, created_at, updated_at",
+        )
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as StudentDocument[];
+    },
+    enabled: !!studentId,
+  });
+}
+
+export interface UploadStudentDocumentInput {
+  studentId: string;
+  tenantId: string;
+  file: File;
+  documentType: string;
+  documentTypeLabel?: string | null;
+  issueDate?: string | null;
+  expirationDate?: string | null;
+  notes?: string | null;
+}
+
+/** Faz upload de documento do aluno (bucket tenant-assets) + insere em student_documents. */
+export function useUploadStudentDocument() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UploadStudentDocumentInput) => {
+      const ext = input.file.name.split(".").pop() ?? "bin";
+      const path = `${input.tenantId}/students/${input.studentId}/${Date.now()}.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("tenant-assets")
+        .upload(path, input.file, { cacheControl: "3600", upsert: false });
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("tenant-assets").getPublicUrl(path);
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const uploadedBy = session?.user?.id ?? null;
+
+      const { data, error } = await supabase
+        .from("student_documents")
+        .insert({
+          student_id: input.studentId,
+          tenant_id: input.tenantId,
+          document_type: input.documentType,
+          document_type_label: input.documentTypeLabel ?? null,
+          file_url: pub.publicUrl,
+          file_name: input.file.name,
+          issue_date: input.issueDate ?? null,
+          expiration_date: input.expirationDate ?? null,
+          notes: input.notes ?? null,
+          uploaded_by: uploadedBy,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      return data as StudentDocument;
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["student-documents", vars.studentId] });
+      toast.success("Documento enviado");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao enviar documento"),
+  });
+}
+
+export interface StudentInvoice {
+  id: string;
+  student_id: string;
+  tenant_id: string;
+  due_date: string;
+  amount_cents: number;
+  status: string;
+  gateway: string | null;
+  gateway_ref: string | null;
+  pix_qr: string | null;
+  pix_qr_base64: string | null;
+  url_boleto: string | null;
+  paid_at: string | null;
+  description: string | null;
+  created_at: string;
+}
+
+export function useStudentInvoices(studentId: string | undefined | null) {
+  return useQuery({
+    queryKey: ["student-invoices", studentId],
+    queryFn: async (): Promise<StudentInvoice[]> => {
+      if (!studentId) return [];
+      const { data, error } = await supabase
+        .from("invoices")
+        .select(
+          "id, student_id, tenant_id, due_date, amount_cents, status, gateway, gateway_ref, pix_qr, pix_qr_base64, url_boleto, paid_at, description, created_at",
+        )
+        .eq("student_id", studentId)
+        .order("due_date", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as StudentInvoice[];
+    },
+    enabled: !!studentId,
+  });
+}
+
+/** Gera PIX manualmente para uma fatura pending → chama edge generate-receivable-pix. */
+export function useGenerateInvoicePix() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (invoiceId: string) => {
+      const response = await supabase.functions.invoke("generate-receivable-pix", {
+        body: { invoice_id: invoiceId },
+      });
+      if (response.error) throw new Error(response.error.message || "Erro ao gerar PIX");
+      if (response.data?.error) throw new Error(response.data.error);
+      return response.data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["student-invoices"] });
+      qc.invalidateQueries({ queryKey: ["aluno-detalhe"] });
+      toast.success("Cobrança gerada");
+    },
+    onError: (err: Error) => toast.error(err.message || "Erro ao cobrar manualmente"),
   });
 }
